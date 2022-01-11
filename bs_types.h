@@ -3,7 +3,7 @@
 #ifndef __BS_TYPES__
 #define __BS_TYPES__
 
-typedef enum { FALSE=0, TRUE } Boolean;
+typedef enum { FALSE = 0, TRUE } Boolean;
 
 typedef unsigned int pid_t;
 
@@ -57,5 +57,13 @@ typedef struct
 	Status_t status;
 } PCB_t;
 
+struct MEMORY
+{
+	Boolean isFree;
+	unsigned key;
+	unsigned memorySize;
+	struct MEMORY* next;
+	struct MEMORY* prev;
+};
 
 #endif  /* __BS_TYPES__ */

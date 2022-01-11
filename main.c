@@ -17,7 +17,6 @@ Boolean batchComplete = FALSE;			// end of pending processes in the file indicat
 FILE* processFile;						// file containing the processes to simulate
 PCB_t processTable[MAX_PROCESSES];		// the process table
 
-// TODO can PCB_t go to globals.h?
 /* ----------------------------------------------------------------	*/
 /* Declarations of global variables visible only in this file 		*/
 PCB_t candidateProcess;					// only for simulation purposes
@@ -27,8 +26,11 @@ PCB_t candidateProcess;					// only for simulation purposes
 int initSim();							// initialise the simulation environment
 
 
+void mainMemory();
+
 int main(int argc, char* argv[])
 {
+	mainMemory();
 	// starting point, all processing is done in called functions
 	printf(GRN "[SYSTEM] Starting system. Available memory: %u\n" RESET, MEMORY_SIZE);
 	initSim();							// initialise the simulation

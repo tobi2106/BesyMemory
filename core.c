@@ -18,11 +18,10 @@
 
 /* ----------------------------------------------------------------	*/
 /* Declarations of global variables visible only in this file 		*/
-//TODO This is not optimal
 //extern PCB_t candidateProcess; // only for simulation purposes
 
-PCB_t process; // the only user process used for batch and FCFS
-PCB_t* pNewProcess; // pointer for new process read from batch
+PCB_t process;			// the only user process used for batch and FCFS
+PCB_t* pNewProcess;		// pointer for new process read from batch
 
 
 /* ---------------------------------------------------------------- */
@@ -39,6 +38,11 @@ void initOS(void)
 	// mark all process entries invalid
 	for (unsigned i = 0; i < MAX_PROCESSES; i++) processTable[i].valid = FALSE;
 	process.pid = 0; // reset pid
+
+	struct MEMORY* new_Node = (struct MEMORY*)malloc(sizeof(struct MEMORY));
+	new_Node->isFree = TRUE;
+	new_Node->key = 0;
+	new_Node->memorySize = MEMORY_SIZE;
 }
 
 void coreLoop(void)
@@ -64,7 +68,7 @@ void coreLoop(void)
 				{
 					// the process is ready to be started
 					isLaunchable = TRUE;
-					pid_t newPid = getNextPid();					// get next valid pid
+					pid_t newPid = getNextPid();							// get next valid pid
 					initNewProcess(newPid, getNewPCBptr());			// Info on new process provided by simulation
 					// now search for a suitable piece of memory for the process
 					/* +++ this needs to be extended for real memory management +++	*/
