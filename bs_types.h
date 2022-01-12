@@ -66,4 +66,5 @@ struct MEMORY
 	struct MEMORY* prev;
 };
 
+typedef struct MEMORY MEMORY;
 #endif  /* __BS_TYPES__ */

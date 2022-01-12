@@ -26,7 +26,6 @@
 #define SCHEDULING_DURATION 5
 #define LOADING_DURATION 5
 
-
 // Mean values between IO events by process type
 #define IO_MEAN_OS			40
 #define IO_MEAN_INTERACTIVE	5
