@@ -13,14 +13,13 @@ struct MEMORY* head = NULL;
 struct MEMORY* tail = NULL;
 struct MEMORY* current = NULL;
 
-void deleteFast(MEMORY* current);
-
-//TODO nicht ganz richtig mit meiner Implementation
+//Gibt an, ob die Liste ein Eintrag enthält
 Boolean isEmpty()
 {
 	return head == NULL;
 }
 
+//Gibt die länge der Liste zurück, auch mit Head
 int length()
 {
 	if (head == NULL && tail == NULL)
@@ -42,14 +41,16 @@ int length()
 	return -1;
 }
 
+//Printet alle Einträge aus der Liste ab. Geht von Tail nach Head. 
+//Wenn nur Head drin ist, wird nur Head geprintet. Head ist Blau makiert.
 void displayMemory()
 {
-	//if(isEmpty) 
-	//{
-	//	printf("[Display] Error! Die Liste ist leer");
-	//}
-	//else
-	if (tail == NULL)
+	//Die Abfrage stimmt noch nicht ganz
+	if(isEmpty()) 
+	{
+		printf("[Display] Error! Die Liste ist leer");
+	}
+	else if (tail == NULL)
 	{
 		printf(CYN"[(%d, %d, %d)]"RESET, head->isFree, head->key, head->memorySize);
 		return;
@@ -71,15 +72,19 @@ void displayMemory()
 	}
 }
 
+//Fühgt Hinten (Links) den neusten Eintrag hinzu. Wenn noch kein Last gesetzt ist, wird der nächste Eintrag zu Last
 void insertLast(Boolean isFree, int key, unsigned memorySize)
 {
-	if (memorySize > head->memorySize)
+	if (isFree == FALSE)
 	{
-		printf("[insertLast] Error! Speicher zu klein!\n");
-	}
-	else 
-	{
-		head->memorySize = head->memorySize - memorySize;
+		if (memorySize > head->memorySize)
+		{
+			printf("[insertLast] Error! Speicher zu klein!\n");
+		}
+		else 
+		{
+			head->memorySize = head->memorySize - memorySize;
+		}
 	}
 
 	struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
@@ -106,7 +111,8 @@ void insertLast(Boolean isFree, int key, unsigned memorySize)
 	tail = link;
 }
 
-void insertFirst(Boolean isFree, int key, unsigned memorySize)
+//Setzt den Head. Mehr auch nicht
+void setHead(Boolean isFree, int key, unsigned memorySize)
 {
 	if (head != NULL)
 	{
@@ -147,6 +153,7 @@ void check()
 	}
 }
 
+//Geht durch die Liste, bis Key gefunden wird und löscht dieen Eintrag
 void delete(unsigned key)
 {
 	struct MEMORY* current = tail;
@@ -237,7 +244,7 @@ void deleteFast(MEMORY* current)
 	return;
 }
 
-//Work in progress
+//Defragmentiert die List. Sobald ein Eintrag fertig ist, wird überprüft ob mehrere leere Prozesse nebeneinander stehen.
 void defragmentierung2(MEMORY* current)
 {
 	struct MEMORY* temp = NULL;
@@ -314,7 +321,8 @@ void defragmentierung2(MEMORY* current)
 	}
 }
 
-//Das Argument isFree vom Prozess wird auf True gesetzt
+//Das Argument isFree vom Prozess wird auf True gesetzt 
+//Mit defragmentierung2
 void setFinish(unsigned key)
 {
 	struct MEMORY* current = tail;
@@ -339,13 +347,17 @@ void setFinish(unsigned key)
 			}
 		}
 
-	current->isFree = TRUE;
-	head->memorySize += current->memorySize;
+		if (current->isFree == FALSE)
+		{
+			current->isFree = TRUE;
+			head->memorySize += current->memorySize;
 
-	defragmentierung2((struct MEMORY*) current);
+			defragmentierung2((struct MEMORY*) current);
+		}
 	}
 }
 
+//Geht jeden Eintrag einmal durch, um zu checken, ob defragmentiert werden muss... Eigentlich nicht nötig. Defrag2 ist eh besser
 void defragmentierung()
 {
 	struct MEMORY* current = tail;
@@ -372,59 +384,84 @@ void defragmentierung()
 	}
 }
 
-//Work in progress
+//Alle Prozesse die fertig sind, werden erneut an die Liste hinten rangesetzt und darauf wird der erste Eintrag gelöscht.
 void kompaktierung()
 {
-	int i = 0;
-	int l = length() - 1;
 	struct MEMORY* current = tail;
-	struct MEMORY* last = NULL;
+	struct MEMORY* temp = NULL;
 
-
-	if (l <= 1)
-	{
-		printf("[Defragmentierung] In der Liste sind keine Prozesse");
-		return;
-	}
-
-	//Auf Edegcases testen //Man kann auch bis Key 0 Iterieren
-	for (i; i <= l; i = i + 1)
+	while (current != head)
 	{
 		if (current->isFree == TRUE)
 		{
-			if (current->next != NULL)
-			{
-				last = current;
-				delete(current->key);
-				l = l - 1;
-				current->next = last->next;
-			}
-			else
-			{
-				delete(current->key);
-				return;
-			}
+			temp = current->next;
+			deleteFast((struct MEMORY*)current);
+			current = temp;
+
+			//temp = current->next;
+			//insertLast(current->isFree, current->key, current->memorySize);
+			//deleteFast((struct MEMORY*)current);
+			//deleteFast((struct MEMORY*)tail);
+			//current = temp;
 		}
-		if (current->next == NULL)
+		else 
 		{
-			return;
-		}		
-		if (last == NULL)
+			current = current->next;
+		}
+	}
+}
+
+void insertBefore(MEMORY* link)
+{
+
+}
+
+//FirstFit
+void firstFit(MEMORY* link)
+{
+	struct MEMORY* current = tail;
+	struct MEMORY* temp = NULL;
+	unsigned diff = 0;
+
+	while (current->next == FALSE)
+	{
+		if (current->isFree == TRUE)
 		{
-			 current = current->next;
+			if (current->memorySize == link->memorySize)
+			{
+				link = current;
+			}
+			else if (current->memorySize >= link->memorySize)
+			{
+				//TODO
+				diff = current->memorySize - link->memorySize;
+				
+				link = current;
+				temp->isFree = TRUE;
+				temp->key = -1;
+				temp->memorySize = diff;
+				temp->next = link->next;
+				temp->prev = link->prev;
+
+
+
+				link->memorySize -= diff;
+				head->memorySize -= link->memorySize;
+				//temp->memorySize = 
+			}
 		}
 	}
 }
 
 int mainMemory()
 {
-	insertFirst(TRUE, 0, MEMORY_SIZE);
+	setHead(TRUE, 0, MEMORY_SIZE);
 	displayMemory();
 
-	insertLast(FALSE, 1, 100);
+	insertLast(TRUE, 1, 100);
 	displayMemory();
 
-	insertLast(FALSE, 2, 500);
+	insertLast(TRUE, 2, 500);
 	displayMemory();
 
 	insertLast(FALSE, 3, 100);
@@ -433,27 +470,19 @@ int mainMemory()
 	insertLast(FALSE, 4, 300);
 	displayMemory();
 
-	insertLast(FALSE, 5, 24);
+	insertLast(TRUE, 5, 24);
 	displayMemory();
 	
-	printf("\nFinisch 3");
-	setFinish(3);
-	displayMemory();
-
-	printf("\nFinisch 5");
 	setFinish(5);
 	displayMemory();
 
-	printf("\nFinisch 2");
-	setFinish(2);
+	setFinish(3);
 	displayMemory();
 
-	printf("\nFinisch 4");
-	setFinish(4);
-	displayMemory();
-
-	printf("\nFinisch 1");
 	setFinish(1);
+	displayMemory();
+
+	kompaktierung();
 	displayMemory();
 
 	return 1;
