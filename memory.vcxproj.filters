@@ -59,6 +59,9 @@
     <ClCompile Include="MemoryList.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Queue.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

@@ -60,11 +60,18 @@ typedef struct
 struct MEMORY
 {
 	Boolean isFree;
-	unsigned key;
+	int key;
 	unsigned memorySize;
 	struct MEMORY* next;
 	struct MEMORY* prev;
 };
-
 typedef struct MEMORY MEMORY;
+
+struct queue
+{
+	struct MEMORY* data;
+	struct queue* next;
+};
+typedef struct queue queue;
+
 #endif  /* __BS_TYPES__ */

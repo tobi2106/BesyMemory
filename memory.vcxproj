@@ -93,6 +93,7 @@
     <ClCompile Include="log.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="MemoryList.c" />
+    <ClCompile Include="Queue.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
