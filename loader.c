@@ -72,9 +72,8 @@ Boolean readNextProcess(FILE* f, PCB_t* pProcess)
 	if (feof(f))
 	{
 		fclose(f);					// close the file on reaching EOF
-		// TODO This might not be an error
-		logError("reached EOF of file");
-		return FALSE;				// error occurred (EOF reached)
+		logGeneric("Reached EOF of file");
+		return FALSE;				// (EOF reached)
 	}
 	else
 	{

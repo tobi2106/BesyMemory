@@ -5,7 +5,8 @@
 
 typedef enum { FALSE = 0, TRUE } Boolean;
 
-typedef unsigned int pid_t;
+//typedef unsigned int pid_t;
+typedef int pid_t;
 
 /* data type for the possible types of processes */
 /* the process type determines the IO-characteristic */
@@ -64,6 +65,7 @@ struct MEMORY
 	unsigned memorySize;
 	struct MEMORY* next;
 	struct MEMORY* prev;
+	struct PCB_t* prozessInfo;
 };
 typedef struct MEMORY MEMORY;
 

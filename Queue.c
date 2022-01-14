@@ -9,19 +9,9 @@
 #include "core.h"
 #include "executer.h"
 
-#define FULL 10
-
 struct queue* tailQ = NULL;
-struct queue* headQ = NULL;
 
-//Eigentlich nicht nötig, let's see
-void initialize(queue* q)
-{
-    q->data = NULL;
-    q->next = NULL;
-}
-
-int isempty()
+int isQempty()
 {
     return tailQ == NULL;
 }
@@ -32,7 +22,7 @@ void enqueue(MEMORY* value)
 
     q->data = value;
 
-    if (isempty())
+    if (isQempty())
     {
         tailQ = q;
         q->next = NULL;
@@ -49,7 +39,7 @@ struct MEMORY* dequeue()
     queue* temp = (struct queue*)malloc(sizeof(struct queue));
     MEMORY* data = (struct MEMORY*)malloc(sizeof(struct MEMORY));
 
-    if (isempty())
+    if (isQempty())
     {
         printf("[Dequeue] Die Q ist leer");
         return NULL;
@@ -83,7 +73,7 @@ struct MEMORY* dequeue()
     }
 }
 
-void display()
+void displayQ()
 {
     if (tailQ == NULL)
     {
@@ -98,7 +88,7 @@ void display()
             printf("(%d)", ptr->data->key);
             ptr = ptr->next;
         }
-        printf("]");
+        printf("]\n");
     }
 }
 
@@ -119,76 +109,76 @@ int mainQueue()
     struct MEMORY* e = (struct MEMORY*)malloc(sizeof(struct MEMORY));
     e->isFree = FALSE, e->key = 5; e->memorySize = 100;
 
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     enqueue(b);
-    display();
+    displayQ();
 
     enqueue(c);
-    display();
+    displayQ();
 
     enqueue(d);
-    display();
+    displayQ();
 
     enqueue(e);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     enqueue(a);
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     dequeue();
-    display();
+    displayQ();
 
     return 0;
 }

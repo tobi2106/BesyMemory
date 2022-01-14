@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-
+//Gibts es nicht? LOL
 Boolean awaitNextProcess(void);
 /* check the batch file for processes to start and advance simulation time */
 /* until the next process can be started */
@@ -14,7 +14,6 @@ Boolean awaitNextProcess(void);
 Boolean isNewProcessReady();
 /* predicate returning if the next process listed in the batch file is ready to be executed */
 /* i.e. if the system time has passed its start time */
-
 
 void flagNewProcessStarted(void);
 /* clean up the PCB of the waiting candidate of a new process */
@@ -24,7 +23,6 @@ unsigned int runToNextEvent(SchedulingEvent_t* nextEvent, pid_t* eventPid);
 // advance the system time until the next scheduling event occurs
 // the event and the pid of the process causing it are updated in the passed parameters
 // the time interval to pass until this event occurs is given by the return value
-
 
 void updateAllVirtualTimes(unsigned int delta);
 // update the virtual time of all currently running processes

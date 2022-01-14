@@ -14,6 +14,8 @@
 #include "loader.h"
 #include "core.h"
 #include "executer.h"
+#include "MemoryList.h"
+#include "Queue.h"
 
 
 /* ----------------------------------------------------------------	*/
@@ -36,13 +38,12 @@ void initOS(void)
 {
 	/* init the status of the OS */
 	// mark all process entries invalid
+	//TODO sollte unötig sein, alle Prozesse sind eh schon false...
 	for (unsigned i = 0; i < MAX_PROCESSES; i++) processTable[i].valid = FALSE;
 	process.pid = 0; // reset pid
 
-	struct MEMORY* new_Node = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-	new_Node->isFree = TRUE;
-	new_Node->key = 0;
-	new_Node->memorySize = MEMORY_SIZE;
+	//Vielleicht Malloc?
+	setHead(TRUE, 0, MEMORY_SIZE);
 }
 
 void coreLoop(void)
@@ -69,31 +70,18 @@ void coreLoop(void)
 					// the process is ready to be started
 					isLaunchable = TRUE;
 					pid_t newPid = getNextPid();							// get next valid pid
-					initNewProcess(newPid, getNewPCBptr());			// Info on new process provided by simulation
-					// now search for a suitable piece of memory for the process
-					/* +++ this needs to be extended for real memory management +++	*/
-					// this simple code must be replaced with searching for a memory location:
-					if (usedMemory + processTable[newPid].size <= MEMORY_SIZE)
-					{
-						// enough memory available, and location in memory found: start process
-						processTable[newPid].status = running;		// all active processes are marked active
-						runningCount++;								// and add to number of running processes
-						usedMemory = usedMemory + processTable[newPid].size; // update amount of used memory
-						systemTime = systemTime + LOADING_DURATION; // account for time used by OS
-						logPidMem(newPid, "Process started and memory allocated");
-						flagNewProcessStarted();					// process is now a running process, not a candidate any more 
-					}
-					else
-					{
-						processTable[newPid].status = blocked;
-						// not enough memory --> blocked due to "no ressources available"
-						logPidMem(newPid, "Process too large, not started");
-					}
+					initNewProcess(newPid, getNewPCBptr());					// Info on new process provided by simulation
+					
+					insertLast(FALSE, newPid, processTable[newPid].size, &processTable[newPid]);
+					//Dieser log muss noch verschoben werden
+					logPidMem(newPid, "Process started and memory allocated");
+					displayMemory();
+
 				}
 				else
 				{
 					isLaunchable = FALSE;
-					//TODO get PID for this info
+					//TODO get PID for this info... Vielleicht mach ich das auch anders.
 					logRdyToRun("Process read but it is not yet ready to run");
 				}
 			}
@@ -116,12 +104,17 @@ void coreLoop(void)
 		
 		/* +++ this needs to be extended for real memory management +++	*/
 		if (nextEvent == completed) // check if a process needs to be terminated
-		{
-			usedMemory = usedMemory - processTable[eventPid].size; // mark memory of the process free
-			// TODO correct coloring for logPidMem
+		{;
+			setFinish(eventPid);
+			//Log muss noch verschoben werden
 			logPidMem(eventPid, "Process terminated, memory freed");
-			deleteProcess(&processTable[eventPid]); // terminate process
-			runningCount--; // one running process less 
+			deleteProcess(&processTable[eventPid]);
+			runningCount--;
+
+			//usedMemory = usedMemory - processTable[eventPid].size; // mark memory of the process free
+			//logPidMem(eventPid, "Process terminated, memory freed");
+			//deleteProcess(&processTable[eventPid]); // terminate process
+			//runningCount--; // one running process less 
 		}
 		// loop until no running processes exist any more and no process is waiting t be started
 	}

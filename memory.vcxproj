@@ -84,6 +84,8 @@
     <ClInclude Include="globals.h" />
     <ClInclude Include="loader.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="MemoryList.h" />
+    <ClInclude Include="Queue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core.c" />

@@ -36,6 +36,12 @@
     <ClInclude Include="log.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Queue.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryList.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core.c">

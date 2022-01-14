@@ -8,10 +8,13 @@
 #include "loader.h"
 #include "core.h"
 #include "executer.h"
+#include "Queue.h"
+#include "MemoryList.h"
 
 struct MEMORY* head = NULL;
 struct MEMORY* tail = NULL;
 struct MEMORY* current = NULL;
+
 
 //Gibt an, ob die Liste ein Eintrag enthält
 Boolean isEmpty()
@@ -68,7 +71,7 @@ void displayMemory()
 		{
 			printf(CYN"(%d, %d, %d)"RESET, ptr->isFree, ptr->key, ptr->memorySize);
 		}
-		printf("]");
+		printf("]\n");
 	}
 }
 
@@ -126,17 +129,21 @@ Boolean firstFit(MEMORY* link)
 		}
 		current = current->next;
 	}
-	//printf("\n[FirstFit] Es wurde kein leerer Prozess gefunden, der gross genug ist!");
+	printf("\n[FirstFit] Es wurde kein leerer Prozess gefunden, der gross genug ist!");
 	return FALSE;
 }
 
 //Fühgt Hinten (Links) den neusten Eintrag hinzu. Wenn noch kein Last gesetzt ist, wird der nächste Eintrag zu Last
-void insertLast(Boolean isFree, int key, unsigned memorySize)
+void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess)
 {
 	struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
+
+	unsigned countFree;
+	
 	link->isFree = isFree;
 	link->key = key;
 	link->memorySize = memorySize;
+	link->prozessInfo = prozess;
 
 	//Hoffe das zerstörrt nichts
 	link->next = NULL;
@@ -155,14 +162,47 @@ void insertLast(Boolean isFree, int key, unsigned memorySize)
 	{
 		if (tail != NULL)
 		{
-			//printf("\n[insertLast] Versuche firstFit!");
-			if (firstFit((struct MEMORY*)link) == TRUE)
+			countFree = check();
+			if (countFree >= 1)
 			{
-				//printf("\n[insertLast] FirstFit erfolgreich!");
-				//unschön
-				return;
+				//printf("\n[insertLast] Versuche firstFit!");
+				if (firstFit((struct MEMORY*)link) == TRUE)
+				{
+					//printf("\n[insertLast] FirstFit erfolgreich!");
+				
+					//Änderungen damit das im Core läuft
+					processTable[key].status = running;
+					usedMemory = usedMemory + processTable[key].size;
+					systemTime = systemTime + LOADING_DURATION;
+					runningCount = runningCount + 1;
+					//Vielleicht kann man das noch anderes machen
+					flagNewProcessStarted();
+
+					//unschön
+					return;
+				}
+				if (countFree >= 2)
+				{
+					printf("\n[FirstFit] Kompaktiere den Speicher und versuche es erneut!");
+					kompaktierung();
+					if (firstFit((struct MEMORY*)link) == TRUE)
+					{
+						//Änderungen damit das im Core läuft
+						processTable[key].status = running;
+						usedMemory = usedMemory + processTable[key].size;
+						systemTime = systemTime + LOADING_DURATION;
+						runningCount = runningCount + 1;
+						//Vielleicht kann man das noch anderes machen
+						flagNewProcessStarted();
+
+						printf("\n[FirstFit] War nach der Kompaktierung erfolgreich!");
+						return;
+					}
+				}
+				printf("\n[insertLast] FirstFit nicht erfolgreich");
 			}
-			//printf("\n[insertLast] FirstFit nicht erfolgreich");
+
+
 		}
 
 		//printf("\n[insertLast] InsertLast!");
@@ -185,11 +225,26 @@ void insertLast(Boolean isFree, int key, unsigned memorySize)
 			//tail = link;
 		}
 		tail = link;
+
+		//Änderungen damit das im Core läuft
+		processTable[key].status = running;
+		usedMemory = usedMemory + processTable[key].size;
+		systemTime = systemTime + LOADING_DURATION;
+		runningCount = runningCount + 1;
+		//Vielleicht kann man das noch anderes machen
+		flagNewProcessStarted();
 	}
 	else
 	{
 		printf("\n[insertLast] Error! Speicher zu klein!");
-		printf("\n[insertLast] Packe prozess in die Q");
+		printf("\n[insertLast] Packe prozess in die Q\n");
+
+		//Änderungen damit das im Core läuft
+		logPidMem(key, "Process too large, not started");
+		processTable[key].status = blocked;
+
+		enqueue(link);
+		displayQ();
 	}
 }
 
@@ -221,18 +276,21 @@ void setHead(Boolean isFree, int key, unsigned memorySize)
 	}
 }
 
-//Weiß nicht, wofür ich den geschrieben habe...
-void check()
+//Checkt, ob es mehr als 2 bereits fertige Prozesse gibt.
+unsigned check()
 {
-	while (tail->next != NULL)
+	struct MEMORY* current = tail;
+	unsigned count = 0;
+
+	while (current->next != NULL && current->next != head)
 	{
-		struct MEMORY* current = tail;
 		if (current->isFree == TRUE)
 		{
-			int myKey = current->key;
-			//delete(myKey);
+			count = count + 1;
 		}
+		current = current->next;
 	}
+	return count;
 }
 
 //Geht durch die Liste, bis Key gefunden wird und löscht dieen Eintrag
@@ -344,7 +402,7 @@ void defragmentierung2(MEMORY* current)
 		if (current->next->isFree == TRUE)
 		{
 			temp = current->next;
-			temp->memorySize += current->memorySize;
+			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
 			//delete(current->key);
 
 			deleteFast((struct MEMORY*)current);
@@ -356,7 +414,7 @@ void defragmentierung2(MEMORY* current)
 		if (current->prev->isFree == TRUE)
 		{
 			temp = current->prev;
-			temp->memorySize += current->memorySize;
+			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
 			//delete(current->key);
 
 			deleteFast((struct MEMORY*)current);
@@ -371,7 +429,7 @@ void defragmentierung2(MEMORY* current)
 
 			temp->memorySize += current->next->memorySize;
 			//printf("\nGib %u Memory dem Ersten!", current->next->memorySize);
-			temp->memorySize += current->memorySize;
+			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
 			//printf("\nGib %u Memory dem Ersten!", current->memorySize);
 
 			//delete(current->next->key);
@@ -383,7 +441,7 @@ void defragmentierung2(MEMORY* current)
 		else if (current->next->isFree == TRUE)
 		{
 			temp = current->next;
-			temp->memorySize += current->memorySize;
+			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
 			//printf("\nGib %u Memory vor mir!", current->memorySize);
 			
 			//delete(current->key);
@@ -393,7 +451,7 @@ void defragmentierung2(MEMORY* current)
 		else if (current->prev->isFree == TRUE)
 		{
 			temp = current->prev;
-			temp->memorySize += current->memorySize;
+			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
 			//printf("\nGib %u Memory hinter mir!", current->memorySize);
 			
 			//delete(current->key);
@@ -412,6 +470,7 @@ void setFinish(int key)
 
 	if (current == NULL)
 	{
+		printf("[setFinish] Error! Es gibt keine Prozesse, der Prozess mit dem Key: %d kann nicht gefunden werden!", key);
 		return;
 	}
 	else
@@ -420,7 +479,7 @@ void setFinish(int key)
 		{
 			if (current->next == NULL)
 			{
-				printf("Der Key %u konnte nicht gefunden werden", key);
+				printf("[setFinish] Error! Der Key %d konnte nicht gefunden werden", key);
 				return;
 			}
 			else
@@ -434,8 +493,16 @@ void setFinish(int key)
 			current->isFree = TRUE;
 			head->memorySize += current->memorySize;
 
+			//Änderungen damit es in Core läuft
+			usedMemory = usedMemory - processTable[key].size;
+
 			defragmentierung2((struct MEMORY*) current);
 		}
+	}
+	if (!isQempty())
+	{
+		struct MEMORY* temp = dequeue();
+		insertLast(temp->isFree, temp->key, temp->memorySize, temp->prozessInfo);
 	}
 }
 
@@ -466,7 +533,8 @@ void defragmentierung()
 	}
 }
 
-//Alle Prozesse die fertig sind, werden erneut an die Liste hinten rangesetzt und darauf wird der erste Eintrag gelöscht.
+//Alle Prozesse die fertig sind, 
+//werden erneut an die Liste hinten rangesetzt und darauf wird der erste Eintrag gelöscht.
 void kompaktierung()
 {
 	struct MEMORY* current = tail;
@@ -497,7 +565,7 @@ int mainMemory()
 {
 	setHead(TRUE, 0, MEMORY_SIZE);
 	displayMemory();
-
+	/*
 	insertLast(FALSE, 1, 100);
 	displayMemory();
 
@@ -527,7 +595,6 @@ int mainMemory()
 	insertLast(FALSE, 7, 100);
 	displayMemory();
 
-
 	insertLast(FALSE, 8, 100);
 	displayMemory();
 
@@ -535,6 +602,15 @@ int mainMemory()
 	displayMemory();
 
 	insertLast(FALSE, 10, 24);
+	displayMemory();
+
+	insertLast(FALSE, 11, 300);
+	displayMemory();
+
+	insertLast(FALSE, 12, 300);
+	displayMemory();
+
+	insertLast(FALSE, 13, 300);
 	displayMemory();
 	
 	setFinish(5);
@@ -554,6 +630,6 @@ int mainMemory()
 
 	kompaktierung();
 	displayMemory();
-
+	*/
 	return 1;
 }

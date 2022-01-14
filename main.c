@@ -6,6 +6,8 @@
 #include "loader.h"
 #include "core.h"
 #include <time.h>
+#include "MemoryList.h"
+#include "Queue.h"
 
 /* ----------------------------------------------------------------	*/
 /* Declare global variables according to definition in globals.h	*/
@@ -25,20 +27,18 @@ PCB_t candidateProcess;					// only for simulation purposes
 /*                Declarations of local functions                   */
 int initSim();							// initialise the simulation environment
 
-
-void mainMemory();
-void mainQueue();
-
 int main(int argc, char* argv[])
 {
-	mainMemory();
-	mainQueue();
+	//mainMemory();
+	//mainQueue();
 	// starting point, all processing is done in called functions
 	printf(GRN "[SYSTEM] Starting system. Available memory: %u\n" RESET, MEMORY_SIZE);
 	initSim();							// initialise the simulation
 	initOS();							// initialise operating system, itself
 	logGeneric("System initialized, starting batch");
 	coreLoop();							// start scheduling loop
+	displayMemory();
+	displayQ();
 	logGeneric("Batch complete, shutting down");
 	fflush(stdout);						// make sure the output on the console is complete 
 	return 1;

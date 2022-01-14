@@ -14,10 +14,9 @@ void coreLoop(void);
 /* the core scheduling loop of the OS								*/
 /* +++ this must be extended for multiprogramming					*/
 
-
 unsigned getNextPid();
 /* returns the next available pid.									*/
-/* returns 0 in case of an error like a fully occupied process-table*/
+/* returns 0 in case of an error like a fully occupied process-table*/ //Ich möchte das zu -1 machen. 
 /* +++ this must be replaced for multiprogramming					*/
 
 int initNewProcess(pid_t newPid, PCB_t* pProcess);
