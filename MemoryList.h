@@ -17,19 +17,21 @@ int length();
 
 void displayMemory();
 
-Boolean firstFit(MEMORY* link);
+//Boolean firstFit(MEMORY* link);
 
-void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess);
+//void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess);
 
-void setHead(Boolean isFree, int key, unsigned memorySize);
+void insertLast(Boolean freeMemory, PCB_t* prozess);
+
+void setHead();
 
 unsigned check();
 
-void deleteFast(MEMORY* current);
+void delete(MEMORY* current);
 
 void defragmentierung2(MEMORY* current);
 
-void setFinish(int key);
+void setFinish(unsigned pid);
 
 void defragmentierung();
 

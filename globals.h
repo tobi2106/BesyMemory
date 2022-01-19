@@ -8,6 +8,7 @@
 #include "bs_types.h"
 #include "core.h"
 #include "log.h"
+#include "MemoryList.h"
 
 
 // Number of possible concurrent processes 
@@ -55,9 +56,11 @@
 /* Define global variables that will be visible in all source files	*/
 extern PCB_t processTable[MAX_PROCESSES];	// the process table
 extern unsigned systemTime;					// the current system time (up time)
-extern unsigned usedMemory;					// amount of used physical memory
+//extern unsigned usedMemory;				// amount of used physical memory
 extern unsigned runningCount;				// counter of currently running processes
 extern Boolean batchComplete;				// end of pending processes in the file indicator
 extern FILE* processFile;					// file containing the processes to simulate
+
+extern unsigned freeMemorySize;
 
 #endif  /* __GLOBALS__ */

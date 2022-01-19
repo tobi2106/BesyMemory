@@ -87,6 +87,7 @@ Boolean readNextProcess(FILE* f, PCB_t* pProcess)
 		{
 			readOK = sscanf(linebuffer, "%u %u %u %u %s", 
 				&pProcess->ownerID, &pProcess->start, &pProcess->duration, &pProcess->size, processTypeStr);
+			pProcess->memoryPointer = 0;
 
 			if (strcmp(processTypeStr, "os") == 0) pProcess->type = os;
 			else if (strcmp(processTypeStr, "interactive") == 0) pProcess->type = interactive;

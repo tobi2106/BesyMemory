@@ -15,6 +15,8 @@ struct MEMORY* head = NULL;
 struct MEMORY* tail = NULL;
 struct MEMORY* current = NULL;
 
+unsigned freeMemorySize = MEMORY_SIZE;
+
 
 //Gibt an, ob die Liste ein Eintrag enthält
 Boolean isEmpty()
@@ -48,6 +50,7 @@ int length()
 //Wenn nur Head drin ist, wird nur Head geprintet. Head ist Blau makiert.
 void displayMemory()
 {
+	printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
 	//Die Abfrage stimmt noch nicht ganz
 	if(isEmpty()) 
 	{
@@ -55,7 +58,7 @@ void displayMemory()
 	}
 	else if (tail == NULL)
 	{
-		printf(CYN"[(%d, %d, %d)]"RESET, head->isFree, head->key, head->memorySize);
+		printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
 		return;
 	}
 	else
@@ -64,19 +67,19 @@ void displayMemory()
 		printf("\n[");
 		while (ptr != NULL && ptr != head)
 		{
-			printf("(%d, %d, %d)", ptr->isFree, ptr->key, ptr->memorySize);
+			printf("(%d, %u, %u)", ptr->freeMemory, ptr->prozessInfo->size, ptr->prozessInfo->size);
 			ptr = ptr->next;
 		}
 		if (ptr == head)
 		{
-			printf(CYN"(%d, %d, %d)"RESET, ptr->isFree, ptr->key, ptr->memorySize);
+			printf(CYN"(%d, %u, %u)"RESET, ptr->freeMemory, ptr->prozessInfo->pid, ptr->prozessInfo->size);
 		}
 		printf("]\n");
 	}
 }
 
 //FirstFit
-Boolean firstFit(MEMORY* link)
+/*Boolean firstFit(MEMORY* link)
 {
 	//Abfragen, ob es einen head gibt. Eigentlich muss es immer einen Head geben... Mal sehen, ob ich die Abfrage rausnehmen werde. Denke ich ja.
 	struct MEMORY* current = tail;
@@ -131,10 +134,10 @@ Boolean firstFit(MEMORY* link)
 	}
 	printf("\n[FirstFit] Es wurde kein leerer Prozess gefunden, der gross genug ist!");
 	return FALSE;
-}
+} */
 
 //Fühgt Hinten (Links) den neusten Eintrag hinzu. Wenn noch kein Last gesetzt ist, wird der nächste Eintrag zu Last
-void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess)
+/*void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess)
 {
 	struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
 
@@ -246,10 +249,66 @@ void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess)
 		enqueue(link);
 		displayQ();
 	}
+} */
+
+void insertLast(Boolean freeMemory, PCB_t* prozessInfo) {
+	struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
+	MEMORY* temp = head;
+
+	unsigned countFree;
+
+	link->freeMemory = freeMemory;
+	link->prozessInfo = prozessInfo;
+
+	if (link->freeMemory == TRUE)
+	{
+		printf("\n[InsertLast] Es wird versucht freier Speicher hinzuzufügen!");
+	}
+	else if (freeMemorySize >= link->prozessInfo->size) {
+		if (head->freeMemory) {
+			tail = head;
+			head = link;
+
+			link->prozessInfo->memoryPointer = 0;
+			freeMemorySize = freeMemorySize - link->prozessInfo->size;
+			if (tail->prozessInfo->size > link->prozessInfo->size) {
+				tail->prozessInfo->size = tail->prozessInfo->size - link->prozessInfo->size;
+				link->next = tail;
+			}
+			else {
+				delete(tail);
+			}
+		}
+		else {
+			do {
+				if (temp->freeMemory && temp->prozessInfo->size >= link->prozessInfo->size) {
+					temp->prozessInfo->size = temp->prozessInfo->size - link->prozessInfo->size;
+					freeMemorySize = freeMemorySize - link->prozessInfo->size;
+
+					if (temp->prozessInfo->size == 0) {
+						link->next = temp->next;
+						link->prev = temp->prev;
+						temp->next->prev = link;
+						temp->prev->next = link;
+
+						delete(temp);
+					}
+					else {
+						link->next = temp;
+						link->prev = temp->prev;
+						temp->prev = link;
+					}
+				}
+				else if (temp->next != NULL) {
+					temp = temp->next;
+				}
+			} while (temp->next);
+		}
+	}
 }
 
 //Setzt den Head. Mehr auch nicht
-void setHead(Boolean isFree, int key, unsigned memorySize)
+void setHead()
 {
 	if (head != NULL)
 	{
@@ -257,22 +316,23 @@ void setHead(Boolean isFree, int key, unsigned memorySize)
 	}
 	else
 	{
+		PCB_t pcb_t;
+
+		pcb_t.size = freeMemorySize;
+		pcb_t.pid = 0;
+		pcb_t.memoryPointer = 0;
+
 		//create a link
 		struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-		link->isFree = isFree;
-		link->key = key;
-		link->memorySize = memorySize;
+		link->freeMemory = TRUE;
+		link->prozessInfo = &pcb_t;
 
-		link->next = head;
-		link->prev = tail;
-		if (head != NULL)
-		{
-			head->prev = link;
-		}
-		else
-		{
-			head = link;
-		}
+		link->prev = NULL;
+		link->next = NULL;
+
+		head = link;
+		printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
+		printf(CYN"[(%d, %u, %u)]"RESET, link->freeMemory, link->prozessInfo->pid, link->prozessInfo->size);
 	}
 }
 
@@ -284,7 +344,7 @@ unsigned check()
 
 	while (current->next != NULL && current->next != head)
 	{
-		if (current->isFree == TRUE)
+		if (current->freeMemory == TRUE)
 		{
 			count = count + 1;
 		}
@@ -293,69 +353,8 @@ unsigned check()
 	return count;
 }
 
-//Geht durch die Liste, bis Key gefunden wird und löscht dieen Eintrag
-void delete(unsigned key)
-{
-	struct MEMORY* current = tail;
-	struct MEMORY* getNext = NULL;
-
-	if (key == 0)
-	{
-		printf("[delete] Error! Es wird versucht den Key 0 zu löschen, dabei stellt der Eintrag mit Key 0 den freien Speicher in der Liste dar.");
-		return;
-	}
-
-	if (current == NULL)
-	{
-		printf("[delete] Error! Es gibt keinen Prozess, Head ist Null");
-		return;
-	}
-	else
-	{
-		while(current->key != key)
-		{
-			if(current->next == NULL)
-			{
-				printf("Der Key %u konnte nicht gefunden werden", key);
-				return;
-			}
-			else
-			{
-				getNext = current;
-				current = current->next;
-			}
-		}
-	}
-
-	//If Last - Muss noch getestet werden
-	if (current->prev == NULL)
-	{
-		tail = current->next;
-	}
-	else
-	{
-		current->prev->next = current->next;
-	}
-
-	//If Head - Muss noch getestet werden
-	//Der Fall, so wie die if-Abfrage gerade dort steht, darf nicht vorkommen! current->next == NULL
-	if (current->next == NULL)	//Das sollte nur der Falls ein, wenn current head ist, und head darf nicht gelöscht werden.
-	{
-		head = current->prev;
-	}
-	else
-	{
-		current->next->prev = current->prev;
-	}
-	//Ich glaub die Line darunter ist überflüssing
-	//current->next->prev = current->prev;
-	
-	free(current);
-	return;
-}
-
 //Same as delete, but in Fast
-void deleteFast(MEMORY* current)
+void delete(MEMORY* current)
 {
 	//If Last - Muss noch getestet werden
 	if (current->prev == NULL)
@@ -399,87 +398,87 @@ void defragmentierung2(MEMORY* current)
 	//If Last
 	if (current == tail)
 	{
-		if (current->next->isFree == TRUE)
+		if (current->next->freeMemory == TRUE)
 		{
 			temp = current->next;
-			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
+			temp->prozessInfo->size = temp->prozessInfo->size + current->prozessInfo->size > MEMORY_SIZE ? MEMORY_SIZE : temp->prozessInfo->size + current->prozessInfo->size;
 			//delete(current->key);
 
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current);
 		}
 	}
 	//If Prozess bevore Head
-	else if (current->next->key == 0)
+	else if (current->next->prozessInfo->pid == 0)
 	{
-		if (current->prev->isFree == TRUE)
+		if (current->prev->freeMemory == TRUE)
 		{
 			temp = current->prev;
-			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
+			temp->prozessInfo->size = temp->prozessInfo->size + current->prozessInfo->size > MEMORY_SIZE ? MEMORY_SIZE : temp->prozessInfo->size + current->prozessInfo->size;
 			//delete(current->key);
 
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current);
 		}
 	}
 	else
 	{
-		if (current->next->isFree == TRUE && current->prev->isFree == TRUE)
+		if (current->next->freeMemory == TRUE && current->prev->freeMemory == TRUE)
 		{
 			//löscht Prozess vor Current und Current selbst.
 			temp = current->prev;
 
-			temp->memorySize += current->next->memorySize;
+			temp->prozessInfo->size += current->next->prozessInfo->size;
 			//printf("\nGib %u Memory dem Ersten!", current->next->memorySize);
-			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
+			temp->prozessInfo->size = temp->prozessInfo->size + current->prozessInfo->size > MEMORY_SIZE ? MEMORY_SIZE : temp->prozessInfo->size + current->prozessInfo->size;
 			//printf("\nGib %u Memory dem Ersten!", current->memorySize);
 
 			//delete(current->next->key);
 			//delete(current->key);
 
-			deleteFast((struct MEMORY*)current->next);
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current->next);
+			delete((struct MEMORY*)current);
 		}
-		else if (current->next->isFree == TRUE)
+		else if (current->next->freeMemory == TRUE)
 		{
 			temp = current->next;
-			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
+			temp->prozessInfo->size = temp->prozessInfo->size + current->prozessInfo->size > MEMORY_SIZE ? MEMORY_SIZE : temp->prozessInfo->size + current->prozessInfo->size;
 			//printf("\nGib %u Memory vor mir!", current->memorySize);
 			
 			//delete(current->key);
 
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current);
 		}
-		else if (current->prev->isFree == TRUE)
+		else if (current->prev->freeMemory == TRUE)
 		{
 			temp = current->prev;
-			temp->memorySize = temp->memorySize + current->memorySize > MEMORY_SIZE ? MEMORY_SIZE : temp->memorySize + current->memorySize;
+			temp->prozessInfo->size = temp->prozessInfo->size + current->prozessInfo->size > MEMORY_SIZE ? MEMORY_SIZE : temp->prozessInfo->size + current->prozessInfo->size;
 			//printf("\nGib %u Memory hinter mir!", current->memorySize);
 			
 			//delete(current->key);
 
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current);
 		}
 	}
 }
 
 //Das Argument isFree vom Prozess wird auf True gesetzt 
 //Mit defragmentierung2
-void setFinish(int key)
+void setFinish(unsigned pid)
 {
 	struct MEMORY* current = tail;
 	struct MEMORY* next = NULL;
 
 	if (current == NULL)
 	{
-		printf("[setFinish] Error! Es gibt keine Prozesse, der Prozess mit dem Key: %d kann nicht gefunden werden!", key);
+		printf("[setFinish] Error! Es gibt keine Prozesse, der Prozess mit der PID: %d kann nicht gefunden werden!", pid);
 		return;
 	}
 	else
 	{
-		while (current->key != key)
+		while (current->prozessInfo->pid != pid)
 		{
 			if (current->next == NULL)
 			{
-				printf("[setFinish] Error! Der Key %d konnte nicht gefunden werden", key);
+				printf("[setFinish] Error! Die PID %d konnte nicht gefunden werden", pid);
 				return;
 			}
 			else
@@ -488,13 +487,10 @@ void setFinish(int key)
 			}
 		}
 
-		if (current->isFree == FALSE)
+		if (current->freeMemory == FALSE)
 		{
-			current->isFree = TRUE;
-			head->memorySize += current->memorySize;
-
-			//Änderungen damit es in Core läuft
-			usedMemory = usedMemory - processTable[key].size;
+			current->freeMemory = TRUE;
+			freeMemorySize += current->prozessInfo->size;
 
 			defragmentierung2((struct MEMORY*) current);
 		}
@@ -502,7 +498,7 @@ void setFinish(int key)
 	if (!isQempty())
 	{
 		struct MEMORY* temp = dequeue();
-		insertLast(temp->isFree, temp->key, temp->memorySize, temp->prozessInfo);
+		insertLast(temp->freeMemory, temp->prozessInfo);
 	}
 }
 
@@ -524,10 +520,10 @@ void defragmentierung()
 	{
 		next = current->next;
 
-		if (next->isFree == TRUE && current->isFree == TRUE)
+		if (next->freeMemory == TRUE && current->freeMemory == TRUE)
 		{
-			next->memorySize += current->memorySize;
-			delete(current->key);
+			next->prozessInfo->size += current->prozessInfo->size;
+			delete(current);
 		}
 		current = next;
 	}
@@ -542,10 +538,10 @@ void kompaktierung()
 
 	while (current != head)
 	{
-		if (current->isFree == TRUE)
+		if (current->freeMemory == TRUE)
 		{
 			temp = current->next;
-			deleteFast((struct MEMORY*)current);
+			delete((struct MEMORY*)current);
 			current = temp;
 		}
 		else 
@@ -555,17 +551,12 @@ void kompaktierung()
 	}
 }
 
-//Nicht benötigt, leer.
-void insertAfter(MEMORY* link)
-{
-
-}
-
 int mainMemory()
 {
-	setHead(TRUE, 0, MEMORY_SIZE);
+	setHead();
+	printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
 	displayMemory();
-	/*
+	
 	insertLast(FALSE, 1, 100);
 	displayMemory();
 
@@ -630,6 +621,6 @@ int mainMemory()
 
 	kompaktierung();
 	displayMemory();
-	*/
+	
 	return 1;
 }

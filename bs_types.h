@@ -44,7 +44,7 @@ typedef enum
 /* data type for the Process Control Block */
 /* +++ this might need to be extended to support future features	*/
 /* like additional schedulers */
-typedef struct
+struct PCB_t
 {
 	Boolean valid;
 	pid_t pid;
@@ -53,16 +53,16 @@ typedef struct
 	unsigned start;
 	unsigned duration;
 	unsigned size;
+	unsigned memoryPointer;
 	unsigned usedCPU;
 	ProcessType_t type;
 	Status_t status;
-} PCB_t;
+};
+typedef struct PCB_t PCB_t;
 
 struct MEMORY
 {
-	Boolean isFree;
-	int key;
-	unsigned memorySize;
+	Boolean freeMemory;
 	struct MEMORY* next;
 	struct MEMORY* prev;
 	struct PCB_t* prozessInfo;

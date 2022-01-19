@@ -43,7 +43,7 @@ void initOS(void)
 	process.pid = 0; // reset pid
 
 	//Vielleicht Malloc?
-	setHead(TRUE, 0, MEMORY_SIZE);
+	setHead();
 }
 
 void coreLoop(void)
@@ -72,7 +72,7 @@ void coreLoop(void)
 					pid_t newPid = getNextPid();							// get next valid pid
 					initNewProcess(newPid, getNewPCBptr());					// Info on new process provided by simulation
 					
-					insertLast(FALSE, newPid, processTable[newPid].size, &processTable[newPid]);
+					insertLast(FALSE, &processTable[newPid]);
 					//Dieser log muss noch verschoben werden
 					logPidMem(newPid, "Process started and memory allocated");
 					displayMemory();

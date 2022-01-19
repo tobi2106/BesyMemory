@@ -68,7 +68,7 @@ struct MEMORY* dequeue()
             temp->next->next = NULL;
             temp->next = NULL;
         }
-        printf(CYN"(%d, %d, %d)\n"RESET, data->isFree, data->key, data->memorySize);
+        printf(CYN"(%d, %d, %d)\n"RESET, data->freeMemory, data->prozessInfo->pid, data->prozessInfo->size);
         return data;
     }
 }
@@ -85,7 +85,7 @@ void displayQ()
         printf("\n[");
         while (ptr != NULL)
         {
-            printf("(%d)", ptr->data->key);
+            printf("(%d)", ptr->data->prozessInfo->pid);
             ptr = ptr->next;
         }
         printf("]\n");
@@ -95,19 +95,19 @@ void displayQ()
 int mainQueue()
 {
     struct MEMORY* a = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    a->isFree = FALSE, a->key = 1; a->memorySize = 100;
+    a->freeMemory = FALSE, a->prozessInfo->pid = 1; a->prozessInfo->size = 100;
 
     struct MEMORY* b = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    b->isFree = FALSE, b->key = 2; b->memorySize = 100;
+    b->freeMemory = FALSE, b->prozessInfo->pid = 2; b->prozessInfo->size = 100;
 
     struct MEMORY* c = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    c->isFree = FALSE, c->key = 3; c->memorySize = 100;
+    c->freeMemory = FALSE, c->prozessInfo->pid = 3; c->prozessInfo->size = 100;
 
     struct MEMORY* d = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    d->isFree = FALSE, d->key = 4; d->memorySize = 100;
+    d->freeMemory = FALSE, d->prozessInfo->pid = 4; d->prozessInfo->size = 100;
 
     struct MEMORY* e = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    e->isFree = FALSE, e->key = 5; e->memorySize = 100;
+    e->freeMemory = FALSE, e->prozessInfo->pid = 5; e->prozessInfo->size = 100;
 
     displayQ();
 
