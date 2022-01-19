@@ -29,7 +29,7 @@ unsigned check();
 
 void delete(MEMORY* current);
 
-void defragmentierung2(MEMORY* current);
+void merge(MEMORY* current);
 
 void setFinish(unsigned pid);
 

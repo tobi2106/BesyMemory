@@ -50,7 +50,6 @@ int length()
 //Wenn nur Head drin ist, wird nur Head geprintet. Head ist Blau makiert.
 void displayMemory()
 {
-	printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
 	//Die Abfrage stimmt noch nicht ganz
 	if(isEmpty()) 
 	{
@@ -58,7 +57,7 @@ void displayMemory()
 	}
 	else if (tail == NULL)
 	{
-		printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
+		printf(CYN"[(%d, %u, %u)]\n"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
 		return;
 	}
 	else
@@ -67,7 +66,7 @@ void displayMemory()
 		printf("\n[");
 		while (ptr != NULL && ptr != head)
 		{
-			printf("(%d, %u, %u)", ptr->freeMemory, ptr->prozessInfo->size, ptr->prozessInfo->size);
+			printf("(%d, %u, %u)", ptr->freeMemory, ptr->prozessInfo->pid, ptr->prozessInfo->size);
 			ptr = ptr->next;
 		}
 		if (ptr == head)
@@ -253,7 +252,7 @@ void displayMemory()
 
 void insertLast(Boolean freeMemory, PCB_t* prozessInfo) {
 	struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-	MEMORY* temp = head;
+	MEMORY* temp = head->prev;
 
 	unsigned countFree;
 
@@ -269,13 +268,14 @@ void insertLast(Boolean freeMemory, PCB_t* prozessInfo) {
 			tail = head;
 			head = link;
 
-			link->prozessInfo->memoryPointer = 0;
-			freeMemorySize = freeMemorySize - link->prozessInfo->size;
-			if (tail->prozessInfo->size > link->prozessInfo->size) {
-				tail->prozessInfo->size = tail->prozessInfo->size - link->prozessInfo->size;
-				link->next = tail;
+			head->prozessInfo->memoryPointer = 0;
+			freeMemorySize = freeMemorySize - head->prozessInfo->size;
+			if (freeMemorySize > 0) {
+				tail->prozessInfo->size = tail->prozessInfo->size - head->prozessInfo->size;
+				head->prev = tail;
+				tail->next = head;
 			}
-			else {
+			else if (freeMemorySize == 0) {
 				delete(tail);
 			}
 		}
@@ -283,26 +283,14 @@ void insertLast(Boolean freeMemory, PCB_t* prozessInfo) {
 			do {
 				if (temp->freeMemory && temp->prozessInfo->size >= link->prozessInfo->size) {
 					temp->prozessInfo->size = temp->prozessInfo->size - link->prozessInfo->size;
-					freeMemorySize = freeMemorySize - link->prozessInfo->size;
-
-					if (temp->prozessInfo->size == 0) {
-						link->next = temp->next;
-						link->prev = temp->prev;
-						temp->next->prev = link;
-						temp->prev->next = link;
-
-						delete(temp);
-					}
-					else {
-						link->next = temp;
-						link->prev = temp->prev;
-						temp->prev = link;
-					}
+					link->next = temp;
+					link->prev = temp->prev;
+					temp->prev = link;
 				}
-				else if (temp->next != NULL) {
-					temp = temp->next;
+				else {
+					temp = temp->prev;
 				}
-			} while (temp->next);
+			} while (temp->prev != NULL);
 		}
 	}
 }
@@ -316,23 +304,21 @@ void setHead()
 	}
 	else
 	{
-		PCB_t pcb_t;
+		PCB_t* pcb_t = malloc(sizeof(struct PCB_t));
 
-		pcb_t.size = freeMemorySize;
-		pcb_t.pid = 0;
-		pcb_t.memoryPointer = 0;
+		pcb_t->size = freeMemorySize;
+		pcb_t->pid = 0;
+		pcb_t->memoryPointer = 0;
 
 		//create a link
 		struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
 		link->freeMemory = TRUE;
-		link->prozessInfo = &pcb_t;
+		link->prozessInfo = pcb_t;
 
 		link->prev = NULL;
 		link->next = NULL;
 
 		head = link;
-		printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
-		printf(CYN"[(%d, %u, %u)]"RESET, link->freeMemory, link->prozessInfo->pid, link->prozessInfo->size);
 	}
 }
 
@@ -368,7 +354,7 @@ void delete(MEMORY* current)
 
 	//If Head - Muss noch getestet werden
 	//Der Fall, so wie die if-Abfrage gerade dort steht, darf nicht vorkommen! current->next == NULL
-	if (current->next == NULL)	//Das sollte nur der Falls ein, wenn current head ist, und head darf nicht gelöscht werden.
+	/*if (current != head)	//Das sollte nur der Falls ein, wenn current head ist, und head darf nicht gelöscht werden.
 	{
 		head = current->prev;
 	}
@@ -380,11 +366,11 @@ void delete(MEMORY* current)
 	//current->next->prev = current->prev;
 
 	free(current);
-	return;
+	return; */
 }
 
 //Defragmentiert die List. Sobald ein Eintrag fertig ist, wird überprüft ob mehrere leere Prozesse nebeneinander stehen.
-void defragmentierung2(MEMORY* current)
+void merge(MEMORY* current)
 {
 	struct MEMORY* temp = NULL;
 	unsigned l = length();
@@ -492,7 +478,7 @@ void setFinish(unsigned pid)
 			current->freeMemory = TRUE;
 			freeMemorySize += current->prozessInfo->size;
 
-			defragmentierung2((struct MEMORY*) current);
+			merge((struct MEMORY*) current);
 		}
 	}
 	if (!isQempty())
@@ -553,74 +539,89 @@ void kompaktierung()
 
 int mainMemory()
 {
+	PCB_t* p1 = malloc(sizeof(struct PCB_t));
+	p1->pid = 1;
+	p1->size = 101;
+	p1->valid = TRUE;
+	p1->status = ready;
+
+	PCB_t* p2 = malloc(sizeof(struct PCB_t));
+	p2->pid = 2;
+	p2->size = 102;
+	p2->valid = TRUE;
+	p2->status = ready;
+
+	PCB_t* p3 = malloc(sizeof(struct PCB_t));
+	p3->pid = 3;
+	p3->size = 103;
+	p3->valid = TRUE;
+	p3->status = ready;
+
+	PCB_t* p4 = malloc(sizeof(struct PCB_t));
+	p4->pid = 4;
+	p4->size = 104;
+	p4->valid = TRUE;
+	p4->status = ready;
+
+	PCB_t* p5 = malloc(sizeof(struct PCB_t));
+	p5->pid = 5;
+	p5->size = 105;
+	p5->valid = TRUE;
+	p5->status = ready;
+
+	PCB_t* p6 = malloc(sizeof(struct PCB_t));
+	p6->pid = 6;
+	p6->size = 106;
+	p6->valid = TRUE;
+	p6->status = ready;
+
+	PCB_t* p7 = malloc(sizeof(struct PCB_t));
+	p7->pid = 7;
+	p7->size = 107;
+	p7->valid = TRUE;
+	p7->status = ready;
+
+	PCB_t* p8 = malloc(sizeof(struct PCB_t));
+	p8->pid = 8;
+	p8->size = 108;
+	p8->valid = TRUE;
+	p8->status = ready;
+
+	PCB_t* p9 = malloc(sizeof(struct PCB_t));
+	p9->pid = 9;
+	p9->size = 109;
+	p9->valid = TRUE;
+	p9->status = ready;
+
 	setHead();
-	printf(CYN"[(%d, %u, %u)]"RESET, head->freeMemory, head->prozessInfo->pid, head->prozessInfo->size);
-	displayMemory();
-	
-	insertLast(FALSE, 1, 100);
 	displayMemory();
 
-	insertLast(FALSE, 2, 500);
+	insertLast(FALSE, p1);
 	displayMemory();
 
-
-	//insertLast(FALSE, 50, 69);
-	//displayMemory();
-
-	setFinish(2);
+	insertLast(FALSE, p2);
 	displayMemory();
 
-
-	insertLast(FALSE, 3, 100);
+	insertLast(FALSE, p3);
 	displayMemory();
 
-	insertLast(FALSE, 4, 100);
+	insertLast(FALSE, p4);
 	displayMemory();
 
-	insertLast(FALSE, 5, 100);
+	insertLast(FALSE, p5);
 	displayMemory();
 
-	insertLast(FALSE, 6, 100);
+	insertLast(FALSE, p6);
 	displayMemory();
 
-	insertLast(FALSE, 7, 100);
+	insertLast(FALSE, p7);
 	displayMemory();
 
-	insertLast(FALSE, 8, 100);
+	insertLast(FALSE, p8);
 	displayMemory();
 
-	insertLast(FALSE, 9, 300);
+	insertLast(FALSE, p9);
 	displayMemory();
 
-	insertLast(FALSE, 10, 24);
-	displayMemory();
-
-	insertLast(FALSE, 11, 300);
-	displayMemory();
-
-	insertLast(FALSE, 12, 300);
-	displayMemory();
-
-	insertLast(FALSE, 13, 300);
-	displayMemory();
-	
-	setFinish(5);
-	displayMemory();
-
-	setFinish(3);
-	displayMemory();
-
-	setFinish(1);
-	displayMemory();
-
-	setFinish(6);
-	displayMemory();
-
-	setFinish(7);
-	displayMemory();
-
-	kompaktierung();
-	displayMemory();
-	
 	return 1;
 }
