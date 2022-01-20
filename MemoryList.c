@@ -40,24 +40,22 @@ int length()
 void displayMemory()
 {
 	//Die Abfrage stimmt noch nicht ganz
-	if(isEmpty()) 
-	{
-		printf("[Display] Error! Die Liste ist leer");
-	}
+	if (isEmpty()) logError("(Display) The memory is NULL!");
 	else
 	{
 		struct MEMORY* ptr = head;
-		printf("\n[");
+		printf("\n[MEM] \t%u \t: [", systemTime);
 		while (ptr != NULL)
 		{
-			printf("(%d, %d, %u)", ptr->isMemoryFree, ptr->memoryPointer, ptr->elementSize);
+			if (ptr->isMemoryFree) printf(GRN"(%d, %u)"RESET, ptr->memoryPointer, ptr->elementSize);
+			else printf("(<%u> %d, %u)", ptr->prozessInfo->pid, ptr->memoryPointer, ptr->elementSize);
 			ptr = ptr->prev;
 		}
 		printf("]\n");
 	}
 }
 
-Boolean insertLast(PCB_t* prozessInfo) {
+Boolean firstFit(PCB_t* prozessInfo) {
 	struct MEMORY* link = malloc(sizeof(struct MEMORY));
 	struct MEMORY* space = malloc(sizeof(struct MEMORY));
 	MEMORY* current = head;
@@ -65,174 +63,140 @@ Boolean insertLast(PCB_t* prozessInfo) {
 	unsigned diff = 0;
 
 	link->prozessInfo = prozessInfo;
-	link->elementSize = prozessInfo->size;
 	link->isMemoryFree = FALSE;
 	link->memoryPointer = 0;
+	link->elementSize = prozessInfo->size;
 	link->next = NULL;
 	link->prev = NULL;
 
-	if (MEMORY_SIZE - usedMemory >= link->elementSize) 
+	do
 	{
-		do 
+		if (current->isMemoryFree == TRUE)
 		{
-			if (current->isMemoryFree == TRUE)
+			//Prozess passt genau in die Lücke rein
+			if (current->elementSize == link->prozessInfo->size)
 			{
-				//Prozess passt genau in die Lücke rein
-				if (current->elementSize == link->prozessInfo->size)
+				usedMemory += link->prozessInfo->size;
+
+				link->next = current->next;
+				link->prev = current->prev;
+
+				if (current == head)
 				{
-					usedMemory += link->prozessInfo->size;
+					head->prev->next = link;
+					head = link;
+				}
+				else if (current == tail)
+				{
+					tail->next->prev = link;
+					tail = link;
+				}
+				else
+				{
+					current->next->prev = link;
+					current->prev->next = link;
+					current = link;
+				}
+				return TRUE;
+			}
+			//Lücke ist zu Groß. Es muss ein neues Lückenelement erstellt werden.
+			else if (current->elementSize >= link->prozessInfo->size)
+			{
+				space->next = NULL;
+				space->prev = NULL;
+				usedMemory += link->prozessInfo->size;
 
-					link->next = current->next;
-					link->prev = current->prev;
+				//X = 500 - 100
+				//diff = 400
+				diff = current->elementSize - link->prozessInfo->size;
 
-					if (current == head)
-					{
-						head->prev->next = link;
-						head = link;
-					}
-					else if (current == tail)
-					{
-						tail->next->prev = link;
-						tail = link;
-					}
-					else
-					{
-						current->next->prev = link;
-						current->prev->next = link;
-						current = link;
-					}
+				//Verlust von 100 Speicher, dafür muss ein Leerer Prozess hinzugefügt werden
+				//Erstelle leeren Prozess, daher key->-1;
+				//TODO Seine Delete Methode sollte gut genug sein tbh.
+				space->prozessInfo = NULL;
+				space->elementSize = diff;
+				space->isMemoryFree = TRUE;
 
-					printf("");
+				//Current Pointer: 99. Link ist 100 gross. Also begint die Lücke bei 199 + 1
+				space->memoryPointer = current->memoryPointer + link->elementSize;
+				link->memoryPointer = current->memoryPointer;
+
+				//temp zwischen Link und seinem Prev einfügen.
+				//Lücke am Head
+				if (current == head)
+				{
+					if (head->prev == NULL) tail = space;
+					else head->prev->next = space;
+
+					space->next = link;
+					link->prev = space;
+
+					space->prev = head->prev;
+					head = link;
 					return TRUE;
 				}
-				//Lücke ist zu Groß. Es muss ein neues Lückenelement erstellt werden.
-				else if (current->elementSize >= link->prozessInfo->size)
+				//Lücke am Tail
+				else if (current == tail)
 				{
-					space->next = NULL;
-					space->prev = NULL;
-					usedMemory += link->prozessInfo->size;
+					space->next = link;
+					link->prev = space;
 
-					//X = 500 - 100
-					//diff = 400
-					diff = current->elementSize - link->prozessInfo->size;
+					link->next = current->next;
+					current->next->prev = link;
+					tail = space;
+					return TRUE;
+				}
+				//Lücke in der Liste
+				else
+				{
+					space->next = link;
+					link->prev = space;
 
-					//Verlust von 100 Speicher, dafür muss ein Leerer Prozess hinzugefügt werden
-					//Erstelle leeren Prozess, daher key->-1;
-					//TODO Seine Delete Methode sollte gut genug sein tbh.
-					space->prozessInfo = NULL;
-					space->elementSize = diff;
-					space->isMemoryFree = TRUE;
-					
-					//Current Pointer: 99. Link ist 100 gross. Also begint die Lücke bei 199 + 1
-					space->memoryPointer = current->memoryPointer + link->elementSize;
-					link->memoryPointer = current->memoryPointer;
+					current->prev->next = space;
+					space->prev = current->prev;
 
-					//temp zwischen Link und seinem Prev einfügen.
-					//Lücke am Head
-					if (current == head)
-					{
-						if (head->prev == NULL)
-						{
-							tail = space;
-						}
-						else
-						{
-							head->prev->next = space;
-						}
-						space->next = link;
-						link->prev = space;
+					current->next->prev = link;
+					link->next = current->next;
 
-						space->prev = head->prev;
-						head = link;
-						return TRUE;
-					}
-					//Lücke am Tail
-					else if(current == tail)
-					{
-						space->next = link;
-						link->prev = space;
+					current = link;
 
-						link->next = current->next;
-						current->next->prev = link;
-						tail = space;
-						return TRUE;
-					}
-					//Lücke in der Liste
-					else
-					{
-						space->next = link;
-						link->prev = space;
-
-						current->prev->next = space;
-						space->prev = current->prev;
-
-						current->next->prev = link;
-						link->next = current->next;
-
-						current = link;
-
-						return TRUE;
-					}
+					return TRUE;
 				}
 			}
-			//Der Prozess ist keine Lücke
-			current = current->prev;
-		} 
-		while (current != NULL);
-		printf("Speicher hat genügend Platz, Prozess kann aber nicht hinzugefügt werden.\n");
-		printf("Versuche zu Kompaktieren und Prozess erneut in den Speicher zu schreiben.!\n");
-		return FALSE;
-	}
-	else 
-	{
-		printf("\nDer Speicher ist zu klein!\n");
-		return FALSE;
-	}
+		}
+		//Der Prozess ist keine Lücke
+		current = current->prev;
+	} 	while (current != NULL);
+	logGeneric("The free memory is big enough, but the process can't be loaded in due to fragmentation.");
+	logGeneric("Will compact the memory now and try to insert the process again.");
+	return FALSE;
 }
 
 //Setzt den Head. Mehr auch nicht
-void setHead()
+void initMemory()
 {
-	if (head != NULL)
-	{
-		printf("[insertFirst] Error! Es gibt bereits einen Head!");
-	}
-	else
-	{
-		//create a link
-		struct MEMORY* link = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-		link->isMemoryFree = TRUE;
-		link->prozessInfo = NULL;
-		link->memoryPointer = 0;
-		link->elementSize = MEMORY_SIZE;
+	//create a link
+	struct MEMORY* link = malloc(sizeof(struct MEMORY));
+	link->isMemoryFree = TRUE;
+	link->prozessInfo = NULL;
+	link->memoryPointer = 0;
+	link->elementSize = MEMORY_SIZE;
 
-		link->prev = tail;
-		link->next = NULL;
+	link->prev = tail;
+	link->next = NULL;
 
-		head = link;
-	}
+	head = link;
 }
 
 //Same as delete, but in Fast
 void delete(MEMORY* current)
 {
-	//found a match, update the link
-	if (current == head) {
-		//change first to point to next link
-		head = head->prev;
-	}
-	else {
-		//bypass the current link
-		current->next->prev = current->prev;
-	}
+	if (current == head) head = head->prev;			//change first to point to next link
+	else current->next->prev = current->prev; 		//bypass the current link
 
-	if (current == tail) {
-		//change last to point to prev link
-		tail = current->next;
-	}
-	else {
-		current->prev->next = current->next;
-	}
+	if (current == tail) tail = current->next;		//change last to point to prev link
+	else current->prev->next = current->next;
+
 	deleteProcess(current->prozessInfo);
 }
 
@@ -240,17 +204,12 @@ void delete(MEMORY* current)
 void merge(MEMORY* current)
 {
 	struct MEMORY* temp = NULL;
-	unsigned l = length();
 
-	if (l == 1)
-	{
-		printf("[merge] Error! Es gibt nur ein Prozess");
-		return;
-	}
-	//If Last
+	if (length() == 1) return;
+
 	if (current == tail)
 	{
-		if (current->next->isMemoryFree == TRUE)
+		if (current->next->isMemoryFree)
 		{
 			temp = current->next;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
@@ -260,7 +219,7 @@ void merge(MEMORY* current)
 	//If Head
 	else if (current == head)
 	{
-		if (current->prev->isMemoryFree == TRUE)
+		if (current->prev->isMemoryFree)
 		{
 			temp = current->prev;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
@@ -271,7 +230,7 @@ void merge(MEMORY* current)
 	}
 	else
 	{
-		if (current->next->isMemoryFree == TRUE && current->prev->isMemoryFree == TRUE)
+		if ((current->next->isMemoryFree) && (current->prev->isMemoryFree))
 		{
 			temp = current->next;
 
@@ -281,13 +240,13 @@ void merge(MEMORY* current)
 			delete((struct MEMORY*)current);
 			delete((struct MEMORY*)current->prev);
 		}
-		else if (current->next->isMemoryFree == TRUE)
+		else if (current->next->isMemoryFree)
 		{
-			temp = current->next; 
+			temp = current->next;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
 			delete((struct MEMORY*)current);
 		}
-		else if (current->prev->isMemoryFree == TRUE)
+		else if (current->prev->isMemoryFree)
 		{
 			temp = current;
 			temp->elementSize = temp->elementSize + current->prev->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->prev->elementSize;
@@ -303,42 +262,31 @@ void setFinish(unsigned pid)
 	struct MEMORY* current = head;
 	struct MEMORY* next = NULL;
 
-	if (current == NULL)
+	while (current->prev != NULL)
 	{
-		printf("[setFinish] Error! Es gibt keine Prozesse, der Prozess mit der PID: %d kann nicht gefunden werden!", pid);
-		return;
-	}
-	else
-	{
-		while (current->prev != NULL)
+		if (current->prozessInfo != NULL)
 		{
-			if (current->prozessInfo != NULL)
-			{
-				if (current->prozessInfo->pid == pid) break;
-			}
-			if (current->prev == NULL)
-			{
-				printf("[setFinish] Error! Die PID %d konnte nicht gefunden werden", pid);
-				return;
-			}
-			else
-			{
-				current = current->prev;
-			}
+			if (current->prozessInfo->pid == pid) break;
 		}
-
-		if (current->isMemoryFree != TRUE)
+		if (current->prev == NULL)
 		{
-			current->isMemoryFree = TRUE;
-			usedMemory -= current->elementSize;
-
-			merge((struct MEMORY*) current);
+			logPid("(setFinish) Error!Die PID % d konnte nicht gefunden werden", pid);
+			return;
 		}
 		else
 		{
-			printf("\n[setFinish] error! Konnte current nicht auf Free stellen!");
+			current = current->prev;
 		}
 	}
+
+	if (!(current->isMemoryFree))
+	{
+		current->isMemoryFree = TRUE;
+		usedMemory -= current->elementSize;
+
+		merge((struct MEMORY*)current);
+	}
+	else logError("(setFinish) Der Prozess konnte im Memory nicht Deallokiert werden");
 }
 
 //Alle Prozesse die fertig sind, 
@@ -353,7 +301,7 @@ void kompaktierung()
 
 	while (current != NULL)
 	{
-		if (current->isMemoryFree == TRUE)
+		if (current->isMemoryFree)
 		{
 			tempNext = current->prev;
 			temp = current;
@@ -368,7 +316,7 @@ void kompaktierung()
 
 			current = tempNext;
 		}
-		else 
+		else
 		{
 			current->memoryPointer = resetMemoryPointer;
 			resetMemoryPointer = resetMemoryPointer + current->elementSize;
@@ -376,96 +324,4 @@ void kompaktierung()
 		}
 	}
 	tail->memoryPointer = resetMemoryPointer;
-}
-
-int mainMemory()
-{
-	/*
-	usedMemory = 0;
-
-	PCB_t* p1 = malloc(sizeof(struct PCB_t));
-	p1->pid = 1;
-	p1->size = 101;
-	p1->valid = TRUE;
-	p1->status = ready;
-
-	PCB_t* p2 = malloc(sizeof(struct PCB_t));
-	p2->pid = 2;
-	p2->size = 102;
-	p2->valid = TRUE;
-	p2->status = ready;
-
-	PCB_t* p3 = malloc(sizeof(struct PCB_t));
-	p3->pid = 3;
-	p3->size = 103;
-	p3->valid = TRUE;
-	p3->status = ready;
-
-	PCB_t* p4 = malloc(sizeof(struct PCB_t));
-	p4->pid = 4;
-	p4->size = 104;
-	p4->valid = TRUE;
-	p4->status = ready;
-
-	PCB_t* p5 = malloc(sizeof(struct PCB_t));
-	p5->pid = 5;
-	p5->size = 105;
-	p5->valid = TRUE;
-	p5->status = ready;
-
-	PCB_t* p6 = malloc(sizeof(struct PCB_t));
-	p6->pid = 6;
-	p6->size = 106;
-	p6->valid = TRUE;
-	p6->status = ready;
-
-	PCB_t* p7 = malloc(sizeof(struct PCB_t));
-	p7->pid = 7;
-	p7->size = 107;
-	p7->valid = TRUE;
-	p7->status = ready;
-
-	PCB_t* p8 = malloc(sizeof(struct PCB_t));
-	p8->pid = 8;
-	p8->size = 108;
-	p8->valid = TRUE;
-	p8->status = ready;
-
-	PCB_t* p9 = malloc(sizeof(struct PCB_t));
-	p9->pid = 9;
-	p9->size = 109;
-	p9->valid = TRUE;
-	p9->status = ready;
-
-	setHead();
-	displayMemory();
-
-	insertLast(p1);
-	displayMemory();
-
-	insertLast(p2);
-	displayMemory();
-
-	insertLast(p3);
-	displayMemory();
-
-	insertLast(p4);
-	displayMemory();
-
-	insertLast(p5);
-	displayMemory();
-
-	insertLast(p6);
-	displayMemory();
-
-	insertLast(p7);
-	displayMemory();
-
-	insertLast(p8);
-	displayMemory();
-
-	insertLast(p9);
-	displayMemory();
-	*/
-	return 1;
 }

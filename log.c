@@ -28,6 +28,11 @@ void logGeneric(char* message)
 	printf(CYN "[log] \t%u \t: %s\n" RESET, systemTime, message);
 }
 
+void logInit(char* message)
+{
+	printf(GRN "[sys] \t%u \t: %s\n" RESET, systemTime, message);
+}
+
 void logRdyToRun(char* message)
 {
 	printf(CYN "[log] \t%u \t: [READY IN : %u] %s\n" RESET, systemTime, candidateProcess.start - systemTime, message);
@@ -57,6 +62,16 @@ void logProRead(unsigned ownerID, unsigned start, unsigned duration, unsigned si
 {
 	printf(YEL "[SIM] \t%u \t: New process read from File: %u |  %u |  %u |  %u |  %s\n" RESET,
 		systemTime, ownerID, start, duration, size, pType);
+}
+
+void logMem(char* message) 
+{
+	printf("[mem] \t%u \t: %s", systemTime, message);
+}
+
+void logQ(char* message) 
+{
+	printf("[que] \t%u \t: %s", systemTime, message);
 }
 
 

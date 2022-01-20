@@ -33,9 +33,14 @@ int main(int argc, char* argv[])
 	//mainMemory();
 	//mainQueue();
 	// starting point, all processing is done in called functions
-	printf(GRN "[SYSTEM] Starting system. Available memory: %u\n" RESET, MEMORY_SIZE);
+	logInit("Starting System!");
+	logInit("Used memory will be displayed in white with (<PID> size).");
+	logInit("Free memory will be displayed in green with (size).");
+	logInit("The queue will be displayed in white with (<PID> size).\n");
 	initSim();							// initialise the simulation
 	initOS();							// initialise operating system, itself
+	displayMemory();
+	displayQ();
 	logGeneric("System initialized, starting batch");
 	coreLoop();							// start scheduling loop
 	displayMemory();

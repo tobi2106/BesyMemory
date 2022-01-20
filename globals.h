@@ -41,6 +41,8 @@
 // name of the file with process definitions
 #define PROCESS_FILENAME "processes.txt"
 
+#define COMPACT_TIME			5
+
 // defining colors
 #define RED "\x1B[31m"
 #define GRN "\x1B[32m"

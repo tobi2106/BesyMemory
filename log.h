@@ -20,6 +20,12 @@ void logGeneric(char* message);
 /* The time stamp (systemTime) will be prepended automatically				*/
 /* the linefeed is automatically appended									*/
 
+void logInit(char* message);
+/* Log for System inits. The message will be green.                         */
+/* print the given general string to stdout and/or a log file 				*/
+/* The time stamp (systemTime) will be prepended automatically				*/
+/* the linefeed is automatically appended.				                    */
+
 void logError(char* message);
 /* print the given general string to stdout and/or a log file 				*/
 /* The time stamp (systemTime) will be prepended automatically				*/
@@ -51,5 +57,13 @@ void logRdyToRun(char* message);
 /* print the information about the next process in file                     */
 /* The time stamp (systemTime) and the  PID are prepended automatically		*/
 /* the remaining time until the process is ready to run                     */
+
+void logMem(char* message);
+/* print the Memory out as a List. Green are free memory.                   */
+/* The time stamp (systemTime) is printed out automatically                 */
+
+void logQ(char* message);
+/* print the Queue out as a List.                                           */
+/* The time stamp (systemTime) is printed out automatically                 */
 
 #endif /* __LOG__ */

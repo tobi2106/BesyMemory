@@ -43,7 +43,8 @@ void initOS(void)
 	process.pid = 0; // reset pid
 
 	//Vielleicht Malloc?
-	setHead();
+	initMemory();
+	logInit("Memory has been initialized!");
 }
 
 void coreLoop(void)
@@ -56,11 +57,6 @@ void coreLoop(void)
 
 	do
 	{
-		if (systemTime == 2000)
-		{
-			printf("ITS 2000 BABY!");
-		}
-
 		// loop until no more process to run 
 		do
 		{
@@ -79,20 +75,21 @@ void coreLoop(void)
 
 					if (processTable[newPid].size > MEMORY_SIZE)
 					{
-						printf("\nEs wurde versucht, ein Prozess in den Speicher zu laden, der größer ist, als der Speicher selbst!");
-						printf("\nDer Prozess mit der id: %d wird aus dem ProzessTable gelöscht!", processTable[newPid].pid);
-						deleteProcess(&processTable[newPid]);
-						displayMemory();
+						logError("(core) A process is bigger than the memory and can't be loaded!");
+						logPid(processTable[newPid].pid, "The process with be deleted!");
+						deleteProcess(&processTable[newPid]);				// process is being deleted from the processTable
+						displayMemory();									// memory is being displayed
 						displayQ();
 					}
 					else if ((MEMORY_SIZE - usedMemory) >= processTable[newPid].size)
 					{
-						if (!insertLast(&processTable[newPid]))
+						if (!firstFit(&processTable[newPid]))
 						{
 							kompaktierung();
-							printf("\nKompaktierung\n");
+							systemTime = systemTime + COMPACT_TIME;
+							logGeneric("Successfully compacted memory.");
 							displayMemory();
-							insertLast(&processTable[newPid]);
+							firstFit(&processTable[newPid]);
 						}
 						processTable[newPid].status = running;
 						systemTime = systemTime + LOADING_DURATION;
@@ -152,12 +149,13 @@ void coreLoop(void)
 				displayQ();
 				waitingCount = waitingCount - 1;
 
-				if (!insertLast(&processTable[eventPid]))
+				if (!firstFit(&processTable[eventPid]))
 				{
 					kompaktierung();
-					printf("\nKompaktierung\n");
+					systemTime = systemTime + COMPACT_TIME;
+					logGeneric("Successfully compacted memory.");
 					displayMemory();
-					insertLast(&processTable[eventPid]);
+					firstFit(&processTable[eventPid]);
 				}
 				processTable[eventPid].status = running;
 				runningCount = runningCount + 1;

@@ -20,5 +20,3 @@ void enqueue(PCB_t* value);
 unsigned dequeue();
 
 Boolean doseNextQFit();
-
-int mainQueue();

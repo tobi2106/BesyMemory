@@ -17,15 +17,9 @@ int length();
 
 void displayMemory();
 
-//Boolean firstFit(MEMORY* link);
+Boolean firstFit(PCB_t* prozess);
 
-//void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess);
-
-Boolean insertLast(PCB_t* prozess);
-
-void setHead();
-
-unsigned check();
+void initMemory();
 
 void delete(MEMORY* current);
 
@@ -33,8 +27,4 @@ void merge(MEMORY* current);
 
 void setFinish(unsigned pid);
 
-void defragmentierung();
-
 void kompaktierung();
-
-int mainMemory();
