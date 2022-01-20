@@ -53,7 +53,6 @@ struct PCB_t
 	unsigned start;
 	unsigned duration;
 	unsigned size;
-	unsigned memoryPointer;
 	unsigned usedCPU;
 	ProcessType_t type;
 	Status_t status;
@@ -62,7 +61,9 @@ typedef struct PCB_t PCB_t;
 
 struct MEMORY
 {
-	Boolean freeMemory;
+	Boolean isMemoryFree;
+	unsigned elementSize;	
+	unsigned memoryPointer;
 	struct MEMORY* next;
 	struct MEMORY* prev;
 	struct PCB_t* prozessInfo;
@@ -71,7 +72,7 @@ typedef struct MEMORY MEMORY;
 
 struct queue
 {
-	struct MEMORY* data;
+	struct PCB_t* data;
 	struct queue* next;
 };
 typedef struct queue queue;

@@ -13,10 +13,12 @@
 
 int isQempty();
 
-void enqueue(MEMORY* value);
-
-struct MEMORY* dequeue();
-
 void displayQ();
+
+void enqueue(PCB_t* value);
+
+unsigned dequeue();
+
+Boolean doseNextQFit();
 
 int mainQueue();

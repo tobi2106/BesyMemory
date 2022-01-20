@@ -13,6 +13,7 @@
 /* Declare global variables according to definition in globals.h	*/
 unsigned systemTime = 0;				// the current system time (up time)
 unsigned runningCount = 0;				// counter of currently running processes
+unsigned waitingCount = 0;				// counter of currently waiting processes in Queue
 extern unsigned usedMemory = 0;			// amount of used physical memory
 
 Boolean batchComplete = FALSE;			// end of pending processes in the file indicator
@@ -29,8 +30,8 @@ int initSim();							// initialise the simulation environment
 
 int main(int argc, char* argv[])
 {
-	mainMemory();
-	//mainQueue();
+	//mainMemory();
+	mainQueue();
 	// starting point, all processing is done in called functions
 	printf(GRN "[SYSTEM] Starting system. Available memory: %u\n" RESET, MEMORY_SIZE);
 	initSim();							// initialise the simulation

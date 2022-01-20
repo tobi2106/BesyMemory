@@ -9,176 +9,206 @@
 #include "core.h"
 #include "executer.h"
 
-struct queue* tailQ = NULL;
+struct queue* headQ = NULL;
 
-int isQempty()
+Boolean isQempty()
 {
-    return tailQ == NULL;
-}
-
-void enqueue(MEMORY* value)
-{
-    queue* q = (struct queue*)malloc(sizeof(struct queue));
-
-    q->data = value;
-
-    if (isQempty())
-    {
-        tailQ = q;
-        q->next = NULL;
-    }
-    else
-    {
-        q->next = tailQ;
-        tailQ = q;
-    }
-}
-
-struct MEMORY* dequeue()
-{
-    queue* temp = (struct queue*)malloc(sizeof(struct queue));
-    MEMORY* data = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-
-    if (isQempty())
-    {
-        printf("[Dequeue] Die Q ist leer");
-        return NULL;
-    }
-    else
-    {
-        temp = tailQ;
-        //Nur ein Eintrag
-        if (tailQ->next == NULL)
-        {
-            data = tailQ->data;
-            tailQ = NULL;
-        }
-        //Zwei Einträge
-        else if (tailQ->next->next == NULL)
-        {
-            data = tailQ->next->data;
-            tailQ->next = NULL;
-            temp = NULL;
-        }
-        //Mehr als 2 Einträge
-        else
-        {
-            while (temp->next->next != NULL) temp = temp->next;
-            data = temp->next->data;
-            temp->next->next = NULL;
-            temp->next = NULL;
-        }
-        printf(CYN"(%d, %d, %d)\n"RESET, data->freeMemory, data->prozessInfo->pid, data->prozessInfo->size);
-        return data;
-    }
+    return headQ == NULL ? TRUE : FALSE;
 }
 
 void displayQ()
 {
-    if (tailQ == NULL)
+    if (headQ == NULL)
     {
-        printf("[display] tailQ ist NULL\n");
+        printf("[display] headQ ist NULL\n");
     }
     else
     {
-        struct queue* ptr = tailQ;
+        struct queue* ptr = headQ;
         printf("\n[");
         while (ptr != NULL)
         {
-            printf("(%d)", ptr->data->prozessInfo->pid);
+            printf("(%d)", ptr->data->pid);
             ptr = ptr->next;
         }
         printf("]\n");
     }
 }
 
+void enqueue(PCB_t* value)
+{
+    queue* q = malloc(sizeof(struct queue));
+    queue* temp = headQ;
+    q->data = value;
+
+    if (isQempty()) headQ = q;
+    else
+    {
+        while (temp->next != NULL) temp = temp->next;
+        temp->next = q;
+    } 
+    q->next = NULL;
+}
+
+unsigned dequeue()
+{
+    queue* temp = headQ;
+    PCB_t* data = malloc(sizeof(struct PCB_t));
+
+    if (isQempty())
+    {
+        printf("[Dequeue] Die Q ist leer");
+        return 0;
+    }
+    else
+    {
+        data = headQ->data;
+        //Nur ein Eintrag
+        if (headQ->next == NULL)
+        {
+            headQ = NULL;
+        }
+        else
+        {
+            headQ = headQ->next;
+        }
+        return data->pid;
+    }
+}
+
+Boolean doseNextQFit()
+{
+    if (isQempty()) return FALSE;
+    return (MEMORY_SIZE - usedMemory) >= headQ->data->size ? TRUE : FALSE;
+}
+
 int mainQueue()
 {
-    struct MEMORY* a = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    a->freeMemory = FALSE, a->prozessInfo->pid = 1; a->prozessInfo->size = 100;
+    /*
+    PCB_t* p1 = malloc(sizeof(struct PCB_t));
+    p1->pid = 1;
+    p1->size = 101;
+    p1->valid = TRUE;
+    p1->status = ready;
 
-    struct MEMORY* b = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    b->freeMemory = FALSE, b->prozessInfo->pid = 2; b->prozessInfo->size = 100;
+    PCB_t* p2 = malloc(sizeof(struct PCB_t));
+    p2->pid = 2;
+    p2->size = 102;
+    p2->valid = TRUE;
+    p2->status = ready;
 
-    struct MEMORY* c = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    c->freeMemory = FALSE, c->prozessInfo->pid = 3; c->prozessInfo->size = 100;
+    PCB_t* p3 = malloc(sizeof(struct PCB_t));
+    p3->pid = 3;
+    p3->size = 103;
+    p3->valid = TRUE;
+    p3->status = ready;
 
-    struct MEMORY* d = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    d->freeMemory = FALSE, d->prozessInfo->pid = 4; d->prozessInfo->size = 100;
+    PCB_t* p4 = malloc(sizeof(struct PCB_t));
+    p4->pid = 4;
+    p4->size = 104;
+    p4->valid = TRUE;
+    p4->status = ready;
 
-    struct MEMORY* e = (struct MEMORY*)malloc(sizeof(struct MEMORY));
-    e->freeMemory = FALSE, e->prozessInfo->pid = 5; e->prozessInfo->size = 100;
+    PCB_t* p5 = malloc(sizeof(struct PCB_t));
+    p5->pid = 5;
+    p5->size = 105;
+    p5->valid = TRUE;
+    p5->status = ready;
+
+    PCB_t* p6 = malloc(sizeof(struct PCB_t));
+    p6->pid = 6;
+    p6->size = 106;
+    p6->valid = TRUE;
+    p6->status = ready;
+
+    PCB_t* p7 = malloc(sizeof(struct PCB_t));
+    p7->pid = 7;
+    p7->size = 107;
+    p7->valid = TRUE;
+    p7->status = ready;
+
+    PCB_t* p8 = malloc(sizeof(struct PCB_t));
+    p8->pid = 8;
+    p8->size = 108;
+    p8->valid = TRUE;
+    p8->status = ready;
+
+    PCB_t* p9 = malloc(sizeof(struct PCB_t));
+    p9->pid = 9;
+    p9->size = 109;
+    p9->valid = TRUE;
+    p9->status = ready;
 
     displayQ();
 
-    enqueue(a);
+    enqueue(p1);
     displayQ();
 
-    enqueue(b);
+    enqueue(p2);
     displayQ();
 
-    enqueue(c);
+    enqueue(p3);
     displayQ();
 
-    enqueue(d);
+    enqueue(p4);
     displayQ();
 
-    enqueue(e);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    dequeue();
-    displayQ();
-
-    enqueue(a);
+    enqueue(p5);
     displayQ();
 
     dequeue();
     displayQ();
 
+    enqueue(p6);
+    displayQ();
+
     dequeue();
     displayQ();
 
-    return 0;
+    enqueue(p7);
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    enqueue(p8);
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    enqueue(p9);
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    enqueue(p1);
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    enqueue(p2);
+    displayQ();
+
+    dequeue();
+    displayQ();
+
+    dequeue();
+    displayQ();
+    */
+    return 1;
 }

@@ -50,7 +50,7 @@ void logPidCompleteness(unsigned pid, unsigned done, unsigned length, char* mess
 
 void logPidMem(unsigned pid, char* message)
 {
-	printf(YEL "[SIM] \t%u \t: [PID : %u] [USED MEMORY : %u] [FREE MEMORY : %u] %s\n" RESET, systemTime, pid, MEMORY_SIZE - freeMemorySize, freeMemorySize, message);
+	printf(YEL "[SIM] \t%u \t: [PID : %u] [USED MEMORY : %u] [FREE MEMORY : %u] %s\n" RESET, systemTime, pid, usedMemory, MEMORY_SIZE - usedMemory,message);
 }
 
 void logProRead(unsigned ownerID, unsigned start, unsigned duration, unsigned size, char* pType)

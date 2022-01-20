@@ -63,6 +63,7 @@ void coreLoop(void)
 			// loop until no currently launchable process is in the batch file
 			if (checkForProcessInBatch())
 			{
+
 				// there is a process pending
 				// predicate if the process is ready to be started is processed by the simulation: 
 				if (isNewProcessReady()) // test if the process is ready to be started
@@ -71,12 +72,43 @@ void coreLoop(void)
 					isLaunchable = TRUE;
 					pid_t newPid = getNextPid();							// get next valid pid
 					initNewProcess(newPid, getNewPCBptr());					// Info on new process provided by simulation
-					
-					insertLast(FALSE, &processTable[newPid]);
-					//Dieser log muss noch verschoben werden
-					logPidMem(newPid, "Process started and memory allocated");
-					displayMemory();
 
+					if (processTable[newPid].size > MEMORY_SIZE)
+					{
+						printf("\nEs wurde versucht, ein Prozess in den Speicher zu laden, der größer ist, als der Speicher selbst!");
+						printf("\nDer Prozess mit der id: %d wird aus dem ProzessTable gelöscht!", processTable[newPid].pid);
+						deleteProcess(&processTable[newPid]);
+						displayMemory();
+						displayQ();
+					}
+					else if ((MEMORY_SIZE - usedMemory) >= processTable[newPid].size)
+					{
+						if (!insertLast(&processTable[newPid]))
+						{
+							kompaktierung();
+							printf("\nKompaktierung\n");
+							displayMemory();
+							if (!insertLast(&processTable[newPid]))
+							{
+								printf("[CORE] Error! Das hätte nicht passieren dürfen!");
+							}
+						}
+						processTable[newPid].status = running;
+						systemTime = systemTime + LOADING_DURATION;
+						runningCount = runningCount + 1;
+						flagNewProcessStarted();
+
+						//Dieser log muss noch verschoben werden
+						logPidMem(newPid, "Process started and memory allocated");
+						displayMemory();
+					}
+					else
+					{
+						logPidMem(newPid, "Process in die Q gepackt");
+						enqueue(&processTable[newPid]);
+						processTable[newPid].status = blocked;
+						waitingCount = waitingCount + 1;
+					}
 				}
 				else
 				{
@@ -104,23 +136,45 @@ void coreLoop(void)
 		
 		/* +++ this needs to be extended for real memory management +++	*/
 		if (nextEvent == completed) // check if a process needs to be terminated
-		{;
+		{
 			setFinish(eventPid);
 			//Log muss noch verschoben werden
 			logPidMem(eventPid, "Process terminated, memory freed");
 			deleteProcess(&processTable[eventPid]);
 			runningCount--;
 
-			//usedMemory = usedMemory - processTable[eventPid].size; // mark memory of the process free
-			//logPidMem(eventPid, "Process terminated, memory freed");
-			//deleteProcess(&processTable[eventPid]); // terminate process
-			//runningCount--; // one running process less 
+			displayMemory();
+
+			displayQ();
+			if (doseNextQFit())
+			{
+				printf("Hallo");
+				eventPid = dequeue();
+				displayQ();
+				waitingCount = waitingCount - 1;
+
+				if (!insertLast(&processTable[eventPid]))
+				{
+					kompaktierung();
+					printf("\nKompaktierung\n");
+					displayMemory();
+					if (!insertLast(&processTable[eventPid]))
+					{
+						printf("[CORE] Error! Das hätte nicht passieren dürfen!");
+					}
+				}
+				processTable[eventPid].status = running;
+				runningCount = runningCount + 1;
+
+				//Dieser log muss noch verschoben werden
+				logPidMem(eventPid, "Process started and memory allocated");
+				displayMemory();
+			}
 		}
 		// loop until no running processes exist any more and no process is waiting t be started
 	}
-	while ((runningCount > 0) || (batchComplete == FALSE));
+	while ((runningCount > 0) || (batchComplete == FALSE) || (waitingCount > 0));
 }
-
 
 /* ----------------------------------------------------------------- */
 unsigned getNextPid()

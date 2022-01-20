@@ -21,7 +21,7 @@ void displayMemory();
 
 //void insertLast(Boolean isFree, int key, unsigned memorySize, PCB_t* prozess);
 
-void insertLast(Boolean freeMemory, PCB_t* prozess);
+Boolean insertLast(PCB_t* prozess);
 
 void setHead();
 

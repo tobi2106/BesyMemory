@@ -107,6 +107,12 @@ void updateAllVirtualTimes(unsigned int delta)
 	unsigned int pid = 1;		// start search with lowest valid pid and 
 	unsigned int i = 0;			// init counter for running processes 
 
+	if (systemTime == 10447) 
+	{
+		printf("Hallo");
+		displayMemory();
+	}
+
 	while ((i < runningCount) && (pid < MAX_PROCESSES))
 	{
 		// search entire process table or until all current processes are checked
