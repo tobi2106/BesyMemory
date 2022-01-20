@@ -1,8 +1,4 @@
  # OwnerID | start | duration | size | type
- 00 2000 100 256 batch
- 01 2000 600 256 batch
- 02 2000 100 256 batch
- 03 2000 600 256 batch
- 04 2000 200 512 batch
- 05 2000 200 512 batch
- 06 4000 200 512 batch
+ 00 00 100 100 os
+ 01 00 250 100 interactive
+ 02 500 200 200 batch
