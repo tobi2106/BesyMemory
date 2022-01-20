@@ -4,10 +4,6 @@
 
 /* ---------------------------------------------------------------- */
 /* Include required external definitions */
-#include <math.h>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "bs_types.h"
 #include "globals.h"
@@ -16,6 +12,7 @@
 #include "executer.h"
 #include "MemoryList.h"
 #include "Queue.h"
+#include "log.h"
 
 
 /* ----------------------------------------------------------------	*/
@@ -70,52 +67,50 @@ void coreLoop(void)
 				{
 					// the process is ready to be started
 					isLaunchable = TRUE;
-					pid_t newPid = getNextPid();							// get next valid pid
+					pid_t newPid = getNextPid();							// Get next valid pid
 					initNewProcess(newPid, getNewPCBptr());					// Info on new process provided by simulation
 
-					if (processTable[newPid].size > MEMORY_SIZE)
+					if (processTable[newPid].size > MEMORY_SIZE)			// Checks if process is too big
 					{
 						logError("(core) A process is bigger than the memory and can't be loaded!");
 						logPid(processTable[newPid].pid, "The process with be deleted!");
-						deleteProcess(&processTable[newPid]);				// process is being deleted from the processTable
-						displayMemory();									// memory is being displayed
-						displayQ();
+						deleteProcess(&processTable[newPid]);				// Process is being deleted from the processTable
+						displayMemory();									// Memory is being displayed
+						displayQ();											// Queue is being displayed
 					}
-					else if ((MEMORY_SIZE - usedMemory) >= processTable[newPid].size)
+					else if ((MEMORY_SIZE - usedMemory) >= processTable[newPid].size)		// Checks if memory has enough free space, if false puts process in queue
 					{
-						if (!firstFit(&processTable[newPid]))
+						if (!(firstFit(&processTable[newPid])))								// Checks if allocation of memory via firstFit successful the first time, compacts and retries if false
 						{
-							kompaktierung();
-							systemTime = systemTime + COMPACT_TIME;
+							compacting();
+							systemTime = systemTime + COMPACT_TIME;							// Adds the compaction time to systemTime
 							logGeneric("Successfully compacted memory.");
 							displayMemory();
 							firstFit(&processTable[newPid]);
 						}
-						processTable[newPid].status = running;
-						systemTime = systemTime + LOADING_DURATION;
-						runningCount = runningCount + 1;
-						flagNewProcessStarted();
-
-						//Dieser log muss noch verschoben werden
-						logPidMem(newPid, "Process started and memory allocated");
-						displayMemory();
+						processTable[newPid].status = running;				// Sets process as running
+						systemTime = systemTime + LOADING_DURATION;			// Adds Loading time to systemTime
+						runningCount = runningCount + 1;					// Increments the running count
+						flagNewProcessStarted();							// Deletes and resets the candidateProcess
+						
+						logPidMem(newPid, "Process started and memory allocated.");
+						displayMemory();									// Displays the memory
 					}
 					else
 					{
-						logPidMem(newPid, "Process in die Q gepackt");
-						enqueue(&processTable[newPid]);
-						processTable[newPid].status = blocked;
-						waitingCount = waitingCount + 1;
+						logPidMem(newPid, "Process will be inserted into the queue.");
+						enqueue(&processTable[newPid]);						// Adds a process to the queue
+						processTable[newPid].status = blocked;				// Sets the process status as blocked
+						waitingCount = waitingCount + 1;					// Increments the waiting count
 					}
 				}
 				else
 				{
-					isLaunchable = FALSE;
-					//TODO get PID for this info... Vielleicht mach ich das auch anders.
-					logRdyToRun("Process read but it is not yet ready to run");
+					isLaunchable = FALSE;									// Sets flag isLaunchable FALSE, indicates that the process can't run yet
+					logRdyToRun("Process read but it is not yet ready to run.");
 				}
 			}
-			// In case the candidate was started, check for another candiate before running the proceses
+			// In case the candidate was started, check for another candidate before running the processes
 		}
 		while ((!batchComplete) && (isLaunchable));
 
@@ -131,43 +126,41 @@ void coreLoop(void)
 		systemTime = systemTime + delta; // update system time by elapsed physical time
 		// now quit the completed process (if any)
 		
-		/* +++ this needs to be extended for real memory management +++	*/
 		if (nextEvent == completed) // check if a process needs to be terminated
 		{
-			setFinish(eventPid);
-			//Log muss noch verschoben werden
-			logPidMem(eventPid, "Process terminated, memory freed");
-			deleteProcess(&processTable[eventPid]);
-			runningCount--;
+			setFinish(eventPid);												// Sets a process as finished in the MemoryList
+			logPidMem(eventPid, "Process terminated, memory freed.");
+			deleteProcess(&processTable[eventPid]);								// Deletes process from the ProcessTable
+			runningCount--;														// Decrements the running count
 
-			displayMemory();
+			displayMemory();													// memory is being displayed
+			displayQ();															// queue is being displayed
 
-			displayQ();
-			if (doseNextQFit())
+			if (doseNextQFit())													// After memory has been deallocated, checks if head of the queue fits into the free memory
 			{
-				eventPid = dequeue();
-				displayQ();
-				waitingCount = waitingCount - 1;
+				eventPid = dequeue();											// gets PID from head of queue and deletes head of queue, sets next entry head of queue
+				displayQ();														// queue is being displayed
+				waitingCount = waitingCount - 1;								// Decrements the waiting count
 
-				if (!firstFit(&processTable[eventPid]))
+				if (!firstFit(&processTable[eventPid]))							// Checks if allocation of memory via firstFit successful the first time, compacts and retries if false
 				{
-					kompaktierung();
+					compacting();											// Compacts the memory
 					systemTime = systemTime + COMPACT_TIME;
 					logGeneric("Successfully compacted memory.");
 					displayMemory();
 					firstFit(&processTable[eventPid]);
 				}
-				processTable[eventPid].status = running;
-				runningCount = runningCount + 1;
+				processTable[eventPid].status = running;						// Sets process as running
+				runningCount = runningCount + 1;								// Increments the running count
 
 				//Dieser log muss noch verschoben werden
 				logPidMem(eventPid, "Process started and memory allocated");
-				displayMemory();
+				displayMemory();												// memory is being displayed
 			}
 		}
 		// loop until no running processes exist any more and no process is waiting t be started
 	}
-	while ((runningCount > 0) || (batchComplete == FALSE) || (waitingCount > 0));
+	while ((runningCount > 0) || (batchComplete == FALSE) || (waitingCount > 0)); // loops the do-while loop until no process is running or waiting and the batch is complete
 }
 
 /* ----------------------------------------------------------------- */

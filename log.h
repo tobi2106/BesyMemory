@@ -7,14 +7,6 @@
 #ifndef __LOG__
 #define __LOG__
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "bs_types.h"
-#include "globals.h"
-#include "loader.h"
-
-
 void logGeneric(char* message);
 /* print the given general string to stdout and/or a log file 				*/
 /* The time stamp (systemTime) will be prepended automatically				*/

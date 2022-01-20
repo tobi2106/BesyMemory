@@ -1,24 +1,22 @@
-#include <math.h>
-#include <time.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "bs_types.h"
 #include "globals.h"
-#include "loader.h"
-#include "core.h"
-#include "executer.h"
+#include "log.h"
 
 struct queue* headQ = NULL;
 
+
+// Checks if the queue is empty
 Boolean isQempty()
 {
     return headQ == NULL ? TRUE : FALSE;
 }
 
+// Prints out the Queue
 void displayQ()
 {
-    if (headQ == NULL) logGeneric("(displayQ) Queue is empty!");
+    if (headQ == NULL) logGeneric("(displayQ) Queue is empty!");        // Checks if the queue is empty
     else
     {
         struct queue* ptr = headQ;
@@ -32,21 +30,23 @@ void displayQ()
     }
 }
 
+// adds an entry to the queue
 void enqueue(PCB_t* value)
 {
     queue* q = malloc(sizeof(struct queue));
     queue* temp = headQ;
     q->data = value;
 
-    if (isQempty()) headQ = q;
+    if (isQempty()) headQ = q;      // Sets the new entry as the head if the queue is empty
     else
     {
-        while (temp->next != NULL) temp = temp->next;
+        while (temp->next != NULL) temp = temp->next;   // Iterates through the list and adds the new element at the end of the queue
         temp->next = q;
     } 
     q->next = NULL;
 }
 
+// removes the head from the queue, sets the next entry as head and gets the pid
 unsigned dequeue()
 {
     queue* temp = headQ;
@@ -60,13 +60,13 @@ unsigned dequeue()
     else
     {
         data = headQ->data;
-        //Nur ein Eintrag
         if (headQ->next == NULL) headQ = NULL;
         else headQ = headQ->next;
         return data->pid;
     }
 }
 
+// Checks if the head of the queue fits into the free memory
 Boolean doseNextQFit()
 {
     if (isQempty()) return FALSE;

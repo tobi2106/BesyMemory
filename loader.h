@@ -4,8 +4,6 @@
 #define __LOADER__
 
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "bs_types.h"
 
 

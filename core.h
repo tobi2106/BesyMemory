@@ -2,10 +2,6 @@
 #ifndef __CORE__
 #define __CORE__
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 void initOS(void);
 /* all initialization steps are started in this function			*/
 /* +++ this must be extended for multiprogramming					*/

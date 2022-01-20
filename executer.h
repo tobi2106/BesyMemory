@@ -2,10 +2,6 @@
 #ifndef __EXEC__
 #define __EXEC__
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 //Gibts es nicht? LOL
 Boolean awaitNextProcess(void);
 /* check the batch file for processes to start and advance simulation time */

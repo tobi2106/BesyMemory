@@ -50,7 +50,7 @@ FILE* openConfigFile(FILE* file, const char* filename)
 		{
 			fgets(linebuffer, 128, file);
 		}
-		printf(CYN "[FILE] Reading from File %s: %s" RESET, *&filename, linebuffer);
+		printf(CYN "[FIL] \t%u \t: Reading from File %s: %s" RESET, systemTime, *&filename, linebuffer);
 		logGeneric("Process info file opened");
 		return file;
 	}

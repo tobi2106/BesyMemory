@@ -7,9 +7,6 @@
 
 #include "bs_types.h"
 #include "core.h"
-#include "log.h"
-#include "MemoryList.h"
-
 
 // Number of possible concurrent processes 
 #define MAX_PROCESSES (unsigned) 100
@@ -41,6 +38,7 @@
 // name of the file with process definitions
 #define PROCESS_FILENAME "processes.txt"
 
+// value of the time that passed while compacting
 #define COMPACT_TIME			5
 
 // defining colors
@@ -52,7 +50,6 @@
 #define CYN "\x1B[36m"
 #define WHT "\x1B[37m"
 #define RESET "\x1B[0m"
-
 
 /* ----------------------------------------------------------------	*/
 /* Define global variables that will be visible in all source files	*/

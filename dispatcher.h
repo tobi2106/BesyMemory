@@ -14,9 +14,6 @@
 #define __DISPATCHER__
 
 #include "bs_types.h"
-#include "globals.h"
-#include "loader.h"
-
 
 SchedulingEvent_t runProcess(PCB_t* pProcess, unsigned quantum);
 /* the process given by the PCB in parameter pProcess is run until			*/

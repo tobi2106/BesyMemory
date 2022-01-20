@@ -1,26 +1,21 @@
-#include <math.h>
-#include <time.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "bs_types.h"
 #include "globals.h"
-#include "loader.h"
 #include "core.h"
-#include "executer.h"
-#include "Queue.h"
 #include "MemoryList.h"
+#include "log.h"
 
 struct MEMORY* head = NULL;
 struct MEMORY* tail = NULL;
 
-//Gibt an, ob die Liste ein Eintrag enthält
+// Checks if the list is empty
 Boolean isEmpty()
 {
 	return head == NULL;
 }
 
-//Gibt die länge der Liste zurück, auch mit Head
+// Returns the length of the list
 int length()
 {
 	int length = 0;
@@ -35,12 +30,10 @@ int length()
 	return -1;
 }
 
-//Printet alle Einträge aus der Liste ab. Geht von Tail nach Head. 
-//Wenn nur Head drin ist, wird nur Head geprintet. Head ist Blau makiert.
+// Prints out the whole list. Free memory is being marked Green
 void displayMemory()
 {
-	//Die Abfrage stimmt noch nicht ganz
-	if (isEmpty()) logError("(Display) The memory is NULL!");
+	if (isEmpty()) logError("(Display) The memory is NULL!");			// Checks if head is empty. Head should never be empty and prints out an error on true
 	else
 	{
 		struct MEMORY* ptr = head;
@@ -55,33 +48,35 @@ void displayMemory()
 	}
 }
 
-Boolean firstFit(PCB_t* prozessInfo) {
+// Allocates a process into the memory
+Boolean firstFit(PCB_t* process) {
 	struct MEMORY* link = malloc(sizeof(struct MEMORY));
 	struct MEMORY* space = malloc(sizeof(struct MEMORY));
 	MEMORY* current = head;
 
 	unsigned diff = 0;
 
-	link->prozessInfo = prozessInfo;
+	link->prozessInfo = process;
 	link->isMemoryFree = FALSE;
 	link->memoryPointer = 0;
-	link->elementSize = prozessInfo->size;
+	link->elementSize = process->size;
 	link->next = NULL;
 	link->prev = NULL;
 
-	do
+	do				// Loops through the List
 	{
-		if (current->isMemoryFree == TRUE)
+		if (current->isMemoryFree == TRUE)			// Checks if the current entry is free Memory
 		{
 			//Prozess passt genau in die Lücke rein
-			if (current->elementSize == link->prozessInfo->size)
+			if (current->elementSize == link->prozessInfo->size)		// Checks if the process is exactly the free memory, replaces the free memory completely if true
 			{
 				usedMemory += link->prozessInfo->size;
 
 				link->next = current->next;
 				link->prev = current->prev;
 
-				if (current == head)
+				// Sets the pointers of the entries before and/or after the allocated entry
+				if (current == head)									// checks for edge cases
 				{
 					head->prev->next = link;
 					head = link;
@@ -91,7 +86,7 @@ Boolean firstFit(PCB_t* prozessInfo) {
 					tail->next->prev = link;
 					tail = link;
 				}
-				else
+				else													
 				{
 					current->next->prev = link;
 					current->prev->next = link;
@@ -99,30 +94,27 @@ Boolean firstFit(PCB_t* prozessInfo) {
 				}
 				return TRUE;
 			}
-			//Lücke ist zu Groß. Es muss ein neues Lückenelement erstellt werden.
+			// Checks if the free memory is bigger than the process, generates a smaller free memory element behind the process 
 			else if (current->elementSize >= link->prozessInfo->size)
 			{
 				space->next = NULL;
 				space->prev = NULL;
 				usedMemory += link->prozessInfo->size;
 
-				//X = 500 - 100
-				//diff = 400
+				// calculates the difference of size between the process and the free memory
 				diff = current->elementSize - link->prozessInfo->size;
 
-				//Verlust von 100 Speicher, dafür muss ein Leerer Prozess hinzugefügt werden
-				//Erstelle leeren Prozess, daher key->-1;
-				//TODO Seine Delete Methode sollte gut genug sein tbh.
+				// Generates a new free memory element with the difference as it's size
 				space->prozessInfo = NULL;
 				space->elementSize = diff;
 				space->isMemoryFree = TRUE;
 
-				//Current Pointer: 99. Link ist 100 gross. Also begint die Lücke bei 199 + 1
+				// Calculates where the pointer of the free memory is
 				space->memoryPointer = current->memoryPointer + link->elementSize;
 				link->memoryPointer = current->memoryPointer;
 
-				//temp zwischen Link und seinem Prev einfügen.
-				//Lücke am Head
+				// allocation of the process into the list
+				// inserts process into head
 				if (current == head)
 				{
 					if (head->prev == NULL) tail = space;
@@ -135,7 +127,7 @@ Boolean firstFit(PCB_t* prozessInfo) {
 					head = link;
 					return TRUE;
 				}
-				//Lücke am Tail
+				// Inserts process into tail
 				else if (current == tail)
 				{
 					space->next = link;
@@ -146,7 +138,7 @@ Boolean firstFit(PCB_t* prozessInfo) {
 					tail = space;
 					return TRUE;
 				}
-				//Lücke in der Liste
+				// Inserts process at the location where the free space was
 				else
 				{
 					space->next = link;
@@ -164,7 +156,7 @@ Boolean firstFit(PCB_t* prozessInfo) {
 				}
 			}
 		}
-		//Der Prozess ist keine Lücke
+		// The iterated item is not a free memory element
 		current = current->prev;
 	} 	while (current != NULL);
 	logGeneric("The free memory is big enough, but the process can't be loaded in due to fragmentation.");
@@ -172,10 +164,10 @@ Boolean firstFit(PCB_t* prozessInfo) {
 	return FALSE;
 }
 
-//Setzt den Head. Mehr auch nicht
+// Initializes the memory list and applies a free memory element
 void initMemory()
 {
-	//create a link
+	// create a link
 	struct MEMORY* link = malloc(sizeof(struct MEMORY));
 	link->isMemoryFree = TRUE;
 	link->prozessInfo = NULL;
@@ -188,38 +180,37 @@ void initMemory()
 	head = link;
 }
 
-//Same as delete, but in Fast
+// deletes an element from the list
 void delete(MEMORY* current)
 {
-	if (current == head) head = head->prev;			//change first to point to next link
-	else current->next->prev = current->prev; 		//bypass the current link
+	if (current == head) head = head->prev;			// change first to point to next link
+	else current->next->prev = current->prev; 		// bypass the current link
 
-	if (current == tail) tail = current->next;		//change last to point to prev link
+	if (current == tail) tail = current->next;		// change last to point to prev link
 	else current->prev->next = current->next;
 
 	deleteProcess(current->prozessInfo);
 }
 
-//Defragmentiert die List. Sobald ein Eintrag fertig ist, wird überprüft ob mehrere leere Prozesse nebeneinander stehen.
+// Checks if there are free memory elements right next to the current free memory object and merges them
 void merge(MEMORY* current)
 {
 	struct MEMORY* temp = NULL;
 
-	if (length() == 1) return;
+	if (length() == 1) return;		// Returns if the list has only one entry
 
-	if (current == tail)
+	if (current == tail)			// Only checks for the previous entry if the current element is the tail
 	{
-		if (current->next->isMemoryFree)
+		if (current->next->isMemoryFree)			// merges the previous element with the current element if the previous element is free memory
 		{
 			temp = current->next;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
 			delete((struct MEMORY*)current);
 		}
 	}
-	//If Head
-	else if (current == head)
+	else if (current == head)		// Only checks for the next entry if the current element is the head
 	{
-		if (current->prev->isMemoryFree)
+		if (current->prev->isMemoryFree)			// merges the next element with the current element if the previous element is free memory
 		{
 			temp = current->prev;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
@@ -228,9 +219,9 @@ void merge(MEMORY* current)
 			delete((struct MEMORY*)current);
 		}
 	}
-	else
+	else							// Checks if the next and previous entries are free Memory
 	{
-		if ((current->next->isMemoryFree) && (current->prev->isMemoryFree))
+		if ((current->next->isMemoryFree) && (current->prev->isMemoryFree))		// checks if the previous and next element are free memory
 		{
 			temp = current->next;
 
@@ -240,13 +231,13 @@ void merge(MEMORY* current)
 			delete((struct MEMORY*)current);
 			delete((struct MEMORY*)current->prev);
 		}
-		else if (current->next->isMemoryFree)
+		else if (current->next->isMemoryFree)									// checks if the previous element is free memory
 		{
 			temp = current->next;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
 			delete((struct MEMORY*)current);
 		}
-		else if (current->prev->isMemoryFree)
+		else if (current->prev->isMemoryFree)									// checks if the next element is free memory
 		{
 			temp = current;
 			temp->elementSize = temp->elementSize + current->prev->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->prev->elementSize;
@@ -255,9 +246,8 @@ void merge(MEMORY* current)
 	}
 }
 
-//Das Argument isFree vom Prozess wird auf True gesetzt 
-//Mit defragmentierung2
-void setFinish(unsigned pid)
+// Sets a process in the memory as finished
+void setFinish(unsigned processID)
 {
 	struct MEMORY* current = head;
 	struct MEMORY* next = NULL;
@@ -266,11 +256,11 @@ void setFinish(unsigned pid)
 	{
 		if (current->prozessInfo != NULL)
 		{
-			if (current->prozessInfo->pid == pid) break;
+			if (current->prozessInfo->pid == processID) break;
 		}
 		if (current->prev == NULL)
 		{
-			logPid("(setFinish) Error!Die PID % d konnte nicht gefunden werden", pid);
+			logPid("(setFinish) Error!Die PID % d konnte nicht gefunden werden", processID);
 			return;
 		}
 		else
@@ -289,9 +279,8 @@ void setFinish(unsigned pid)
 	else logError("(setFinish) Der Prozess konnte im Memory nicht Deallokiert werden");
 }
 
-//Alle Prozesse die fertig sind, 
-//werden erneut an die Liste hinten rangesetzt und darauf wird der erste Eintrag gelöscht.
-void kompaktierung()
+// compacts the whole list and merges all free memory elements to one free memory element
+void compacting()
 {
 	struct MEMORY* current = head;
 	struct MEMORY* temp = NULL;

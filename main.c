@@ -30,8 +30,6 @@ int initSim();							// initialise the simulation environment
 
 int main(int argc, char* argv[])
 {
-	//mainMemory();
-	//mainQueue();
 	// starting point, all processing is done in called functions
 	logInit("Starting System!");
 	logInit("Used memory will be displayed in white with (<PID> size).");
