@@ -81,7 +81,28 @@ Boolean insertLast(PCB_t* prozessInfo) {
 				if (current->elementSize == link->prozessInfo->size)
 				{
 					usedMemory += link->prozessInfo->size;
-					current = link;
+
+					link->next = current->next;
+					link->prev = current->prev;
+
+					if (current == head)
+					{
+						head->prev->next = link;
+						head = link;
+					}
+					else if (current == tail)
+					{
+						tail->next->prev = link;
+						tail = link;
+					}
+					else
+					{
+						current->next->prev = link;
+						current->prev->next = link;
+						current = link;
+					}
+
+					printf("");
 					return TRUE;
 				}
 				//Lücke ist zu Groß. Es muss ein neues Lückenelement erstellt werden.
@@ -139,14 +160,17 @@ Boolean insertLast(PCB_t* prozessInfo) {
 					//Lücke in der Liste
 					else
 					{
-						//Unsicher ob der richtig ist
-						space->prev = current->prev;
-						current->prev->next = space;
+						space->next = link;
+						link->prev = space;
 
-						space->next = current;
-						current->prev = space;
+						current->prev->next = space;
+						space->prev = current->prev;
+
+						current->next->prev = link;
+						link->next = current->next;
 
 						current = link;
+
 						return TRUE;
 					}
 				}

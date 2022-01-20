@@ -54,9 +54,13 @@ void coreLoop(void)
 	PCB_t* nextReady = NULL;			// pointer to process that finishes next	
 	Boolean isLaunchable = FALSE;		// indicates if the next process in batch is launchable 
 
-
 	do
 	{
+		if (systemTime == 2000)
+		{
+			printf("ITS 2000 BABY!");
+		}
+
 		// loop until no more process to run 
 		do
 		{
@@ -88,10 +92,7 @@ void coreLoop(void)
 							kompaktierung();
 							printf("\nKompaktierung\n");
 							displayMemory();
-							if (!insertLast(&processTable[newPid]))
-							{
-								printf("[CORE] Error! Das hätte nicht passieren dürfen!");
-							}
+							insertLast(&processTable[newPid]);
 						}
 						processTable[newPid].status = running;
 						systemTime = systemTime + LOADING_DURATION;
@@ -122,7 +123,6 @@ void coreLoop(void)
 		while ((!batchComplete) && (isLaunchable));
 
 		// The checks for starting a process are done. Now work on the running processes
-		/* +++++++++++++++++++++ */
 		// get the process that will be completed next by searching the process table
 		unsigned delta = runToNextEvent(&nextEvent, &eventPid);
 		// run the existing processes until a new arrives or one terminates
@@ -148,7 +148,6 @@ void coreLoop(void)
 			displayQ();
 			if (doseNextQFit())
 			{
-				printf("Hallo");
 				eventPid = dequeue();
 				displayQ();
 				waitingCount = waitingCount - 1;
@@ -158,10 +157,7 @@ void coreLoop(void)
 					kompaktierung();
 					printf("\nKompaktierung\n");
 					displayMemory();
-					if (!insertLast(&processTable[eventPid]))
-					{
-						printf("[CORE] Error! Das hätte nicht passieren dürfen!");
-					}
+					insertLast(&processTable[eventPid]);
 				}
 				processTable[eventPid].status = running;
 				runningCount = runningCount + 1;

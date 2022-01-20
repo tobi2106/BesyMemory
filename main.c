@@ -31,7 +31,7 @@ int initSim();							// initialise the simulation environment
 int main(int argc, char* argv[])
 {
 	//mainMemory();
-	mainQueue();
+	//mainQueue();
 	// starting point, all processing is done in called functions
 	printf(GRN "[SYSTEM] Starting system. Available memory: %u\n" RESET, MEMORY_SIZE);
 	initSim();							// initialise the simulation
