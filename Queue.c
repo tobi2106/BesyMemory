@@ -1,3 +1,6 @@
+/* The queue for process that can't be loaded into the queue yet. */
+/* Coded by Alexander Heffner and Tobias Tobel */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "bs_types.h"

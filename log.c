@@ -1,5 +1,6 @@
 /* Implementation of the log functions */
 /* for comments on the functions see the associated .h-file */
+/* Coded by Alexander Heffner and Tobias Tobel */
 
 /* ---------------------------------------------------------------- */
 /* Include required external definitions */

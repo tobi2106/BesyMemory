@@ -1,4 +1,4 @@
-/* Implementation of system componentes required to simulate the	*/
+/* Implementation of system components required to simulate the		*/
 /* execution of processes.											*/
 /* for comments on the functions see the associated .h-file */
 
@@ -12,6 +12,9 @@
 #include "globals.h"
 #include "core.h"
 #include "executer.h"
+
+#include "log.h"
+#include "MemoryList.h"
 
 
 /* ----------------------------------------------------------------	*/
@@ -104,12 +107,6 @@ void updateAllVirtualTimes(unsigned int delta)
 	// executed by its equal share. 
 	unsigned int pid = 1;		// start search with lowest valid pid and 
 	unsigned int i = 0;			// init counter for running processes 
-
-	if (systemTime == 10447) 
-	{
-		printf("Hallo");
-		displayMemory();
-	}
 
 	while ((i < runningCount) && (pid < MAX_PROCESSES))
 	{

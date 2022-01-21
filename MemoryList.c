@@ -1,3 +1,6 @@
+/* List to manage the memory. Everything regarding memory is located in this file. */
+/* Coded by Alexander Heffner and Tobias Tobel */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "bs_types.h"

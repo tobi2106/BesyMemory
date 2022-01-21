@@ -1,6 +1,7 @@
 /* Implementation of core functionality of the OS					*/
 /* this includes the main scheduling loop							*/
 /* for comments on the functions see the associated .h-file */
+/* Changes made by Alexander Heffner and Tobias Tobel */
 
 /* ---------------------------------------------------------------- */
 /* Include required external definitions */

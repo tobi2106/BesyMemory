@@ -1,6 +1,8 @@
 // main file, top level of simulation/test environment for the		*/
 /* memory management component of the operating system				*/
 /* under development												*/
+#include <stdlib.h>
+
 #include "bs_types.h"
 #include "globals.h"
 #include "loader.h"
@@ -8,6 +10,7 @@
 #include <time.h>
 #include "MemoryList.h"
 #include "Queue.h"
+#include "log.h"
 
 /* ----------------------------------------------------------------	*/
 /* Declare global variables according to definition in globals.h	*/
@@ -44,7 +47,8 @@ int main(int argc, char* argv[])
 	displayMemory();
 	displayQ();
 	logGeneric("Batch complete, shutting down");
-	fflush(stdout);						// make sure the output on the console is complete 
+	fflush(stdout);						// make sure the output on the console is complete
+	system("pause");
 	return 1;
 }
 

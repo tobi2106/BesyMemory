@@ -8,6 +8,8 @@
 #include "globals.h"
 #include "dispatcher.h"
 
+#include <stdlib.h>
+
 
 /* ----------------------------------------------------------------- */
 /*                Declarations of local helper functions             */

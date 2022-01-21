@@ -8,6 +8,9 @@
 /* Include required external definitions */
 #include <math.h>
 #include "loader.h"
+
+#include <string.h>
+
 #include "bs_types.h"
 #include "globals.h"
 #include "log.h"
