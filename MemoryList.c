@@ -43,8 +43,8 @@ void displayMemory()
 		printf("\n[MEM] \t%u \t: [", systemTime);
 		while (ptr != NULL)
 		{
-			if (ptr->isMemoryFree) printf(GRN"(%d, %u)"RESET, ptr->memoryPointer, ptr->elementSize);
-			else printf("(<%u> %d, %u)", ptr->prozessInfo->pid, ptr->memoryPointer, ptr->elementSize);
+			if (ptr->isMemoryFree) printf(GRN"(%d, %u)"RESET, ptr->startPosition, ptr->elementSize);
+			else printf("(<%u> %d, %u)", ptr->prozessInfo->pid, ptr->startPosition, ptr->elementSize);
 			ptr = ptr->prev;
 		}
 		printf("]\n");
@@ -61,7 +61,7 @@ Boolean firstFit(PCB_t* process) {
 
 	link->prozessInfo = process;
 	link->isMemoryFree = FALSE;
-	link->memoryPointer = 0;
+	link->startPosition = 0;
 	link->elementSize = process->size;
 	link->next = NULL;
 	link->prev = NULL;
@@ -113,8 +113,8 @@ Boolean firstFit(PCB_t* process) {
 				space->isMemoryFree = TRUE;
 
 				// Calculates where the pointer of the free memory is
-				space->memoryPointer = current->memoryPointer + link->elementSize;
-				link->memoryPointer = current->memoryPointer;
+				space->startPosition = current->startPosition + link->elementSize;
+				link->startPosition = current->startPosition;
 
 				// allocation of the process into the list
 				// inserts process into head
@@ -174,7 +174,7 @@ void initMemory()
 	struct MEMORY* link = malloc(sizeof(struct MEMORY));
 	link->isMemoryFree = TRUE;
 	link->prozessInfo = NULL;
-	link->memoryPointer = 0;
+	link->startPosition = 0;
 	link->elementSize = MEMORY_SIZE;
 
 	link->prev = tail;
@@ -217,7 +217,7 @@ void merge(MEMORY* current)
 		{
 			temp = current->prev;
 			temp->elementSize = temp->elementSize + current->elementSize > MEMORY_SIZE ? MEMORY_SIZE : temp->elementSize + current->elementSize;
-			temp->memoryPointer = current->memoryPointer;
+			temp->startPosition = current->startPosition;
 			//delete(current->key);
 			delete((struct MEMORY*)current);
 		}
@@ -257,11 +257,11 @@ void setFinish(unsigned processID)
 
 	while (current->prev != NULL)
 	{
-		if (current->prozessInfo != NULL)
+		if (current->prozessInfo != NULL) // Checks if the process info is not null
 		{
-			if (current->prozessInfo->pid == processID) break;
+			if (current->prozessInfo->pid == processID) break;		// Stops the loop if the process in the memory is found
 		}
-		if (current->prev == NULL)
+		if (current->prev == NULL)									// if no element is found, prints an error
 		{
 			logPid("(setFinish) Error!Die PID % d konnte nicht gefunden werden", processID);
 			return;
@@ -272,7 +272,7 @@ void setFinish(unsigned processID)
 		}
 	}
 
-	if (!(current->isMemoryFree))
+	if (!(current->isMemoryFree))				// Deallocate the process from the memory and set the element as free Memory
 	{
 		current->isMemoryFree = TRUE;
 		usedMemory -= current->elementSize;
@@ -291,9 +291,9 @@ void compacting()
 
 	unsigned int resetMemoryPointer = 0;
 
-	while (current != NULL)
+	while (current != NULL)			// Iterates through the list as long as there are entries left
 	{
-		if (current->isMemoryFree)
+		if (current->isMemoryFree)		// Checks if element is free memory, merges element with the tail if true
 		{
 			tempNext = current->prev;
 			temp = current;
@@ -310,10 +310,11 @@ void compacting()
 		}
 		else
 		{
-			current->memoryPointer = resetMemoryPointer;
+			// Updates the startPosition of each memory element
+			current->startPosition = resetMemoryPointer;
 			resetMemoryPointer = resetMemoryPointer + current->elementSize;
 			current = current->prev;
 		}
 	}
-	tail->memoryPointer = resetMemoryPointer;
+	tail->startPosition = resetMemoryPointer;
 }

@@ -63,7 +63,7 @@ struct MEMORY
 {
 	Boolean isMemoryFree;
 	unsigned elementSize;	
-	unsigned memoryPointer;
+	unsigned startPosition;
 	struct MEMORY* next;
 	struct MEMORY* prev;
 	struct PCB_t* prozessInfo;
